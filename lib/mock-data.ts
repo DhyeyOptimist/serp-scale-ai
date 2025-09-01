@@ -1,5 +1,6 @@
-import { ITool } from '@/models/Tool';
+import { ITool, Tool } from '@/models/Tool';
 
+// Mock data using the legacy ITool format for backward compatibility
 export const mockTools: ITool[] = [
   {
     _id: '507f1f77bcf86cd799439011',
@@ -74,6 +75,43 @@ export const mockTools: ITool[] = [
     updatedAt: new Date('2024-01-18')
   }
 ];
+
+// Helper function to convert legacy ITool to new Supabase Tool format
+export function convertToSupabaseTool(legacyTool: ITool): Tool {
+  return {
+    id: parseInt(legacyTool._id, 16), // Convert hex string to number
+    created_at: legacyTool.createdAt.toISOString(),
+    name: legacyTool.name,
+    short_description: legacyTool.short_description,
+    full_description: legacyTool.full_description || null,
+    logo_url: legacyTool.logo_url || null,
+    website_url: legacyTool.website_url,
+    rating: legacyTool.rating,
+    pricing_model: legacyTool.pricing_model,
+    category: legacyTool.category,
+    faqs: legacyTool.faqs || null,
+    is_featured: legacyTool.is_featured
+  };
+}
+
+// Helper function to convert Supabase Tool to legacy ITool format
+export function convertToLegacyTool(supabaseTool: Tool): ITool {
+  return {
+    _id: supabaseTool.id.toString(16), // Convert number to hex string
+    name: supabaseTool.name,
+    short_description: supabaseTool.short_description,
+    full_description: supabaseTool.full_description ?? undefined,
+    logo_url: supabaseTool.logo_url ?? undefined,
+    website_url: supabaseTool.website_url,
+    rating: supabaseTool.rating || 0,
+    pricing_model: supabaseTool.pricing_model || '',
+    category: supabaseTool.category || '',
+    faqs: supabaseTool.faqs ?? undefined,
+    is_featured: supabaseTool.is_featured,
+    createdAt: new Date(supabaseTool.created_at),
+    updatedAt: new Date(supabaseTool.created_at) // Using created_at as fallback
+  };
+}
 
 export const mockCategories: string[] = [
   'AI Chatbot',
