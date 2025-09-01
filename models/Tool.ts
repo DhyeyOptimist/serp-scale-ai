@@ -50,10 +50,13 @@ export interface ToolUpdate {
 }
 
 // Legacy interface for backward compatibility (maps to new Tool type)
-export interface ITool extends Omit<Tool, 'id' | 'created_at'> {
+export interface ITool extends Omit<Tool, 'id' | 'created_at' | 'full_description' | 'logo_url' | 'faqs'> {
   _id: string;
   createdAt: Date;
   updatedAt: Date;
+  full_description?: string;
+  logo_url?: string;
+  faqs?: FAQ[];
 }
 
 // Legacy FAQ interface for backward compatibility

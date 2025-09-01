@@ -51,7 +51,7 @@ export default function ToolCard({ tool }: ToolCardProps) {
             </Link>
           </div>
 
-          <StarRating rating={tool.rating} className="mb-3" />
+          <StarRating rating={tool.rating || 0} className="mb-3" />
 
           <p className="text-foreground/70 text-sm leading-relaxed mb-4">
             {tool.short_description}

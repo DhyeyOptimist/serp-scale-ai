@@ -100,13 +100,13 @@ export function convertToLegacyTool(supabaseTool: Tool): ITool {
     _id: supabaseTool.id.toString(16), // Convert number to hex string
     name: supabaseTool.name,
     short_description: supabaseTool.short_description,
-    full_description: supabaseTool.full_description ?? undefined,
-    logo_url: supabaseTool.logo_url ?? undefined,
+    full_description: supabaseTool.full_description || undefined,
+    logo_url: supabaseTool.logo_url || undefined,
     website_url: supabaseTool.website_url,
     rating: supabaseTool.rating || 0,
     pricing_model: supabaseTool.pricing_model || '',
     category: supabaseTool.category || '',
-    faqs: supabaseTool.faqs ?? undefined,
+    faqs: supabaseTool.faqs || undefined,
     is_featured: supabaseTool.is_featured,
     createdAt: new Date(supabaseTool.created_at),
     updatedAt: new Date(supabaseTool.created_at) // Using created_at as fallback
