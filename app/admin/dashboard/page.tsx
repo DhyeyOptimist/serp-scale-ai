@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'edge'
+export const preferredRegion = 'iad1'
+
 export default async function AdminDashboard() {
   const supabase = createClient()
   

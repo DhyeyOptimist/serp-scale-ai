@@ -1,4 +1,7 @@
 {
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
   "functions": {
     "app/admin/**": {
       "maxDuration": 10
@@ -7,5 +10,8 @@
       "maxDuration": 10
     }
   },
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "github": {
+    "silent": true
+  }
 }
