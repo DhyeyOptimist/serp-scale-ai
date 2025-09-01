@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { Tool } from '@/models/Tool'
 import Link from 'next/link'
 import '../config' // Import the edge runtime configuration
+import DeleteButton from '@/components/admin/DeleteButton'
 
 export default async function AdminDashboard() {
   const supabase = createClient()
@@ -180,13 +181,11 @@ export default async function AdminDashboard() {
                       <div className="flex gap-2">
                         <Link 
                           href={`/admin/tools/${tool.id}/edit`} 
-                          className="text-blue-600 hover:underline"
+                          className="text-blue-600 hover:underline font-medium"
                         >
                           Edit
                         </Link>
-                        <button className="text-destructive hover:underline">
-                          Delete
-                        </button>
+                        <DeleteButton id={tool.id} name={tool.name} />
                       </div>
                     </td>
                   </tr>
