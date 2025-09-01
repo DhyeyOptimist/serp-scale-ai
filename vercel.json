@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "app/admin/**": {
+      "maxDuration": 10
+    },
+    "app/auth/**": {
+      "maxDuration": 10
+    }
+  },
+  "regions": ["iad1"]
+}
