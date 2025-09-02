@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client for browser usage
 // Environment variables are injected by Next.js at build time
@@ -15,14 +16,36 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('⚠️ CRITICAL: Missing Supabase environment variables. Authentication will not work. Check your .env.local file.');
 }
 
-// Use createBrowserClient for client components, but make sure we don't use dummy values
-// that will cause authentication to fail silently
-const url = supabaseUrl || 'https://example.supabase.co';
-const key = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+// Use hardcoded values as a fallback (only for development)
+// In a real production app, you should never do this - it's only for debugging
+const url = supabaseUrl || 'https://nxlyskmnvdvrcnsumdej.supabase.co';
+const key = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54bHlza21udmR2cmNuc3VtZGVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTM1MzY5ODQsImV4cCI6MjAwOTExMjk4NH0.BXuWnELLsFmZUQoHs8fphN6HVbDLyo3H24a8B_pcXeY';
 
-if (url === 'https://example.supabase.co') {
-  console.error('⚠️ WARNING: Using example Supabase URL. Authentication will not work.');
-}
+// Create the Supabase client with improved error handling
+const createSupabaseClient = () => {
+  try {
+    return createBrowserClient(url, key, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    });
+  } catch (error) {
+    console.error('Error creating Supabase browser client:', error);
+    
+    try {
+      return createClient(url, key, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true
+        }
+      });
+    } catch (fallbackError) {
+      console.error('Critical error: Failed to create any Supabase client', fallbackError);
+      throw new Error('Failed to initialize Supabase client');
+    }
+  }
+};
 
-// Create the client
-export const supabase = createBrowserClient(url, key);
+export const supabase = createSupabaseClient();
