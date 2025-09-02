@@ -10,10 +10,11 @@ export async function signIn(formData: FormData) {
   try {
     const supabase = createClient()
 
-    // Log environment variables for debugging (remove in production)
-    console.log('Environment check:', {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not Set',
-      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Not Set'
+    // Full debugging info about environment
+    console.log('Environment variables status:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL, 
+      keyFirstChars: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 10) + '...' : 'Not Set'
     })
 
     // Get form data
@@ -25,6 +26,8 @@ export async function signIn(formData: FormData) {
       return { error: 'Email and password are required' }
     }
 
+    console.log(`Attempting to sign in with email: ${email} (password length: ${password.length})`)
+
     // Attempt to sign in
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -32,13 +35,20 @@ export async function signIn(formData: FormData) {
     })
 
     if (error) {
-      console.error('Login error:', error.message, error.code)
+      // Log the full error for debugging
+      console.error('Login error details:', { 
+        message: error.message, 
+        code: error.code,
+        status: error.status,
+        name: error.name,
+        details: JSON.stringify(error)
+      })
       
       // Return more detailed error messages based on error code
       if (error.message.includes('Email not confirmed')) {
         return { error: 'Please verify your email address before logging in' }
       } else if (error.message.includes('Invalid login credentials')) {
-        return { error: 'The email or password you entered is incorrect' }
+        return { error: 'The email or password you entered is incorrect. Note: You need to create a user first at /admin/signup' }
       } else {
         return { error: `Authentication failed: ${error.message}` }
       }

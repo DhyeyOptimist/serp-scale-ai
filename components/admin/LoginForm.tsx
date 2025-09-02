@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import EnvDebugger from '@/components/debug/EnvDebugger'
 
 export default function LoginForm() {
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +31,7 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
+      <EnvDebugger />
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-foreground">Admin Access</h2>
