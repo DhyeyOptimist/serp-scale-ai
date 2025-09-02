@@ -13,13 +13,13 @@ console.log('Supabase Client Initialization:', {
 });
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('⚠️ CRITICAL: Missing Supabase environment variables. Authentication will not work.');
-  console.error('Please ensure you have a .env.local file with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY values.');
+  console.error('⚠️ CRITICAL: Missing Supabase environment variables. Authentication will not work. Check your .env.local file.');
 }
 
-// Use environment variables with no fallbacks
-const url = supabaseUrl || '';
-const key = supabaseAnonKey || '';
+// Use hardcoded values as a fallback (only for development)
+// In a real production app, you should never do this - it's only for debugging
+const url = supabaseUrl || 'https://nxlyskmnvdvrcnsumdej.supabase.co';
+const key = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54bHlza21udmR2cmNuc3VtZGVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTM1MzY5ODQsImV4cCI6MjAwOTExMjk4NH0.BXuWnELLsFmZUQoHs8fphN6HVbDLyo3H24a8B_pcXeY';
 
 // Create the Supabase client with improved error handling
 const createSupabaseClient = () => {
