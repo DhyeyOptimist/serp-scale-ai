@@ -81,6 +81,12 @@ export default function LoginForm() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
+          
+          <div className="text-center mt-4">
+            <a href="/admin/signup" className="text-sm text-blue-600 hover:text-blue-800">
+              Create an admin account (for development only)
+            </a>
+          </div>
         </form>
       </div>
     </div>

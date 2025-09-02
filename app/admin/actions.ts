@@ -10,6 +10,12 @@ export async function signIn(formData: FormData) {
   try {
     const supabase = createClient()
 
+    // Log environment variables for debugging (remove in production)
+    console.log('Environment check:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not Set',
+      key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set' : 'Not Set'
+    })
+
     // Get form data
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -20,22 +26,33 @@ export async function signIn(formData: FormData) {
     }
 
     // Attempt to sign in
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      console.error('Login error:', error.message)
-      return { error: 'Invalid credentials' }
+      console.error('Login error:', error.message, error.code)
+      
+      // Return more detailed error messages based on error code
+      if (error.message.includes('Email not confirmed')) {
+        return { error: 'Please verify your email address before logging in' }
+      } else if (error.message.includes('Invalid login credentials')) {
+        return { error: 'The email or password you entered is incorrect' }
+      } else {
+        return { error: `Authentication failed: ${error.message}` }
+      }
     }
+
+    // Successful login
+    console.log('Login successful for:', email)
 
     // Revalidate the admin path and redirect to dashboard
     revalidatePath('/admin')
     redirect('/admin/dashboard')
   } catch (err) {
     console.error('Unexpected error during login:', err)
-    return { error: 'An unexpected error occurred' }
+    return { error: 'An unexpected error occurred. Please try again later.' }
   }
 }
 
