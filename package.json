@@ -8,8 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "build:check": "next build && next start",
+    "db:setup": "node scripts/create-tables.js",
     "db:seed": "node scripts/seed.js",
-    "db:seed:full": "node -e \"require('./scripts/seed.js').seedFull()\""
+    "db:seed:full": "node -e \"require('./scripts/seed.js').seedFull()\"",
+    "db:init": "npm run db:setup && npm run db:seed"
   },
   "devDependencies": {
     "dotenv": "^16.3.1",

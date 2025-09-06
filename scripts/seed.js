@@ -5,24 +5,37 @@ require('dotenv').config({ path: '.env.local' });
 // Get Supabase credentials from environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // Validate environment variables
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!supabaseUrl || (!supabaseServiceKey && !supabaseAnonKey)) {
   console.error('❌ Missing required environment variables:');
   if (!supabaseUrl) console.error('  - NEXT_PUBLIC_SUPABASE_URL');
-  if (!supabaseServiceKey) console.error('  - SUPABASE_SERVICE_KEY');
+  if (!supabaseServiceKey && !supabaseAnonKey) console.error('  - Either SUPABASE_SERVICE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY');
   console.error('\nPlease add these to your .env.local file.');
-  console.error('\nFind your Service Role Key in Supabase Dashboard > Project Settings > API > service_role key');
   process.exit(1);
 }
 
 // Display information about the environment variables (without revealing the full key)
 console.log('Environment variables:');
 console.log(`- NEXT_PUBLIC_SUPABASE_URL: ${supabaseUrl}`);
-console.log(`- SUPABASE_SERVICE_KEY: ${supabaseServiceKey.substring(0, 5)}...${supabaseServiceKey.substring(supabaseServiceKey.length - 5)}`);
 
-// Create Supabase client with Service Role Key for admin privileges
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Try to use the service key if available, otherwise fall back to anon key
+let keyToUse = supabaseServiceKey;
+let isServiceKey = true;
+
+if (!supabaseServiceKey || supabaseServiceKey.includes('your-')) {
+  console.log('⚠️ No valid service key found, falling back to anonymous key (limited permissions)');
+  keyToUse = supabaseAnonKey;
+  isServiceKey = false;
+}
+
+if (keyToUse) {
+  console.log(`- Using key: ${keyToUse.substring(0, 5)}...${keyToUse.substring(keyToUse.length - 5)} (${isServiceKey ? 'service' : 'anonymous'} key)`);
+}
+
+// Create Supabase client with the appropriate key
+const supabase = createClient(supabaseUrl, keyToUse);
 
 // Sample data for seeding the database - 5 example tools
 const seedTools = [
@@ -125,17 +138,21 @@ async function seedDatabase() {
   console.log('🌱 Starting database seeding process...');
   
   try {
-    // 1. Delete all existing tools from the table
-    console.log('🗑️  Deleting existing tools...');
-    const { error: deleteError } = await supabase.from('tools').delete().neq('id', 0);
+    // Skip the deletion step which requires service role key
+    console.log('ℹ️ Skipping deletion of existing tools (requires service role key)');
     
-    if (deleteError) {
-      throw new Error(`Failed to delete existing tools: ${deleteError.message}`);
+    // Check if we can connect to Supabase
+    console.log('� Checking Supabase connection...');
+    const { data: testData, error: testError } = await supabase.from('tools').select('count').limit(1);
+    
+    if (testError) {
+      console.log('⚠️ Supabase connection test failed. Will try to insert anyway.');
+      console.log(`   Error: ${testError.message}`);
+    } else {
+      console.log('✅ Supabase connection successful');
     }
     
-    console.log('✅ Successfully deleted existing tools.');
-    
-    // 2. Insert new tools from seed data
+    // Insert new tools from seed data
     console.log(`📥 Inserting ${seedTools.length} new tools...`);
     const { data, error: insertError } = await supabase.from('tools').insert(seedTools).select();
     
@@ -166,17 +183,21 @@ async function seedFullDatabase() {
     // Import the full set of tools
     const fullSeedTools = require('./full-seed-data.js');
     
-    // 1. Delete all existing tools from the table
-    console.log('🗑️  Deleting existing tools...');
-    const { error: deleteError } = await supabase.from('tools').delete().neq('id', 0);
+    // Skip the deletion step which requires service role key
+    console.log('ℹ️ Skipping deletion of existing tools (requires service role key)');
     
-    if (deleteError) {
-      throw new Error(`Failed to delete existing tools: ${deleteError.message}`);
+    // Check if we can connect to Supabase
+    console.log('� Checking Supabase connection...');
+    const { data: testData, error: testError } = await supabase.from('tools').select('count').limit(1);
+    
+    if (testError) {
+      console.log('⚠️ Supabase connection test failed. Will try to insert anyway.');
+      console.log(`   Error: ${testError.message}`);
+    } else {
+      console.log('✅ Supabase connection successful');
     }
     
-    console.log('✅ Successfully deleted existing tools.');
-    
-    // 2. Insert all tools from full seed data
+    // Insert all tools from full seed data
     console.log(`📥 Inserting ${fullSeedTools.length} tools...`);
     const { data, error: insertError } = await supabase.from('tools').insert(fullSeedTools).select();
     
