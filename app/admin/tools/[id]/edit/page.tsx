@@ -1,8 +1,11 @@
-import { createClient } from '@/lib/supabaseClient'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import '../../../config' // Import the edge runtime configuration
 import ToolForm from '@/components/admin/ToolForm'
+import { createClient } from '@supabase/supabase-js'
 
 interface EditToolPageProps {
   params: {
@@ -10,29 +13,70 @@ interface EditToolPageProps {
   }
 }
 
-export default async function EditToolPage({ params }: EditToolPageProps) {
+export default function EditToolPage({ params }: EditToolPageProps) {
+  const router = useRouter()
   const { id } = params
   const toolId = parseInt(id, 10)
   
-  if (isNaN(toolId)) {
-    notFound()
+  const [tool, setTool] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  useEffect(() => {
+    async function fetchTool() {
+      if (isNaN(toolId)) {
+        router.push('/admin/dashboard')
+        return
+      }
+      
+      try {
+        // Use environment variables directly
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Missing Supabase credentials')
+        }
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        
+        // Fetch the tool by ID
+        const { data, error: supabaseError } = await supabase
+          .from('tools')
+          .select('*')
+          .eq('id', toolId)
+          .single()
+        
+        if (supabaseError) throw supabaseError
+        
+        if (!data) {
+          router.push('/admin/dashboard')
+          return
+        }
+        
+        setTool(data)
+      } catch (err) {
+        console.error('Error fetching tool:', err)
+        setError('Failed to load tool. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchTool()
+  }, [toolId, router])
+  
+  if (isLoading) {
+    return <div className="p-6 text-center">Loading tool information...</div>
   }
   
-  const supabase = createClient()
-  
-  // Fetch the tool by ID
-  const { data: tool, error } = await supabase
-    .from('tools')
-    .select('*')
-    .eq('id', toolId)
-    .single()
-  
-  if (error || !tool) {
-    notFound()
+  if (error) {
+    return <div className="p-6 text-center text-red-500">{error}</div>
   }
   
-  // Format FAQs for display in textarea
-  const faqsString = tool.faqs ? JSON.stringify(tool.faqs, null, 2) : ''
+  if (!tool) {
+    return <div className="p-6 text-center">Tool not found</div>
+  }
   
   return (
     <div className="space-y-6">

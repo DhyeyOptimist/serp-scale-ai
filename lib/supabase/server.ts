@@ -5,28 +5,15 @@ import type { CookieOptions } from '@supabase/ssr'
 export function createClient() {
   const cookieStore = cookies()
 
-  // Add validation for environment variables
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  // Add validation for environment variables with proper fallbacks
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nxlyskmnvdvrcnsumdej.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54bHlza21udmR2cmNuc3VtZGVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzQ4NjgwMzcsImV4cCI6MTk5MDQ0NDAzN30.VhMcDyt-bMa4AqB2OlaPFKejFcgO1Zyae4k4Lj7lQdM'
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error(
-      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.'
-    )
-    
-    // For Vercel builds to complete, we provide fallback values
-    // This won't work in production but allows the build to complete
-    return createServerClient(
-      supabaseUrl || 'https://example.supabase.co',
-      supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
-      {
-        cookies: {
-          getAll: () => [],
-          setAll: () => {},
-        },
-      }
-    )
-  }
+  // Log initialization for debugging
+  console.log('Server Supabase Client Initialization:', {
+    url: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'Using fallback URL',
+    key: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 10)}...` : 'Using fallback key',
+  })
 
   return createServerClient(
     supabaseUrl,

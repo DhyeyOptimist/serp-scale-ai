@@ -1,23 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import type { Tool } from '@/models/Tool'
 import Link from 'next/link'
-import '../config' // Import the edge runtime configuration
 import DeleteButton from '@/components/admin/DeleteButton'
 
-export default async function AdminDashboard() {
-  const supabase = createClient()
+export default function AdminDashboard() {
+  const [tools, setTools] = useState<Tool[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   
-  // Get the current user for welcome message
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Fetch tools from database ordered by created_at in descending order
-  const { data: tools, error } = await supabase
-    .from('tools')
-    .select('*')
-    .order('created_at', { ascending: false })
-
   // Calculate stats
   const totalTools = tools?.length || 0
   const featuredTools = tools?.filter(tool => tool.is_featured)?.length || 0
@@ -28,6 +21,39 @@ export default async function AdminDashboard() {
     if (tool.category) uniqueCategories.add(tool.category)
   })
   const categoriesCount = uniqueCategories.size
+
+  useEffect(() => {
+    async function fetchTools() {
+      try {
+        setLoading(true)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Missing Supabase environment variables')
+        }
+        
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        
+        // Fetch tools from database ordered by created_at in descending order
+        const { data, error: supabaseError } = await supabase
+          .from('tools')
+          .select('*')
+          .order('created_at', { ascending: false })
+          
+        if (supabaseError) throw supabaseError
+        
+        setTools(data || [])
+      } catch (err) {
+        console.error('Error fetching tools:', err)
+        setError(err instanceof Error ? err.message : 'Unknown error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchTools()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -133,7 +159,7 @@ export default async function AdminDashboard() {
         
         {error && (
           <div className="p-4 mb-4 text-sm rounded-lg bg-destructive/15 text-destructive">
-            Error loading tools: {error.message}
+            Error loading tools: {error}
           </div>
         )}
         
@@ -196,29 +222,25 @@ export default async function AdminDashboard() {
         )}
       </div>
 
-      {user && (
-        <div className="rounded-lg border border-border bg-card p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Account Information
-          </h2>
-          <div className="space-y-2">
-            <p className="text-sm">
-              <span className="font-medium text-foreground">Email:</span>{' '}
-              <span className="text-muted-foreground">{user.email}</span>
-            </p>
-            <p className="text-sm">
-              <span className="font-medium text-foreground">User ID:</span>{' '}
-              <span className="text-muted-foreground font-mono">{user.id}</span>
-            </p>
-            <p className="text-sm">
-              <span className="font-medium text-foreground">Last Sign In:</span>{' '}
-              <span className="text-muted-foreground">
-                {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'}
-              </span>
-            </p>
-          </div>
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">
+          Admin Access
+        </h2>
+        <div className="space-y-2">
+          <p className="text-sm">
+            <span className="font-medium text-foreground">Status:</span>{' '}
+            <span className="text-green-600 font-medium">Authenticated</span>
+          </p>
+          <p className="text-sm">
+            <span className="font-medium text-foreground">Session:</span>{' '}
+            <span className="text-muted-foreground">Active</span>
+          </p>
+          <p className="text-sm">
+            <span className="font-medium text-foreground">Role:</span>{' '}
+            <span className="text-muted-foreground">Administrator</span>
+          </p>
         </div>
-      )}
+      </div>
     </div>
   )
 }

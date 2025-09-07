@@ -1,14 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { AlertCircle, CheckCircle } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 
 export default function SupabaseTest() {
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  
+  const [authStatus, setAuthStatus] = useState<{
+    hasUsername: boolean;
+    hasPassword: boolean;
+    hasSecretKey: boolean;
+    secretKeyLength: number;
+  }>({
+    hasUsername: false,
+    hasPassword: false,
+    hasSecretKey: false,
+    secretKeyLength: 0
+  })
 
   const runTest = async () => {
     setIsLoading(true)
@@ -92,54 +107,144 @@ export default function SupabaseTest() {
     }
   }
 
+  // Check auth configuration on component mount
+  useEffect(() => {
+    // Check authentication config
+    setAuthStatus({
+      hasUsername: !!process.env.ADMIN_USERNAME,
+      hasPassword: !!process.env.ADMIN_PASSWORD,
+      hasSecretKey: !!process.env.SECRET_COOKIE_PASSWORD,
+      secretKeyLength: process.env.SECRET_COOKIE_PASSWORD?.length || 0
+    })
+  }, [])
+  
+  const authConfigValid = authStatus.hasUsername && authStatus.hasPassword && 
+                           authStatus.hasSecretKey && authStatus.secretKeyLength >= 32
+
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6 bg-white rounded-lg shadow-md mt-10">
+    <div className="container mx-auto p-6 space-y-8">
       <div>
-        <h2 className="text-xl font-bold mb-2">Supabase Connection Test</h2>
-        <p className="text-sm text-gray-500">
-          This tests if your application can connect to Supabase
+        <h1 className="text-3xl font-bold mb-2">System Diagnostics</h1>
+        <p className="text-muted-foreground">
+          This page helps identify configuration issues with your deployment
         </p>
       </div>
 
-      <div className="space-y-4">
-        <Button 
-          className="w-full"
-          onClick={runTest}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Testing...' : 'Test Supabase Connection'}
+      {/* Authentication Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Authentication Configuration
+            {authConfigValid ? (
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-500" />
+            )}
+          </CardTitle>
+          <CardDescription>
+            Status of environment variables required for authentication
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2">
+            <li className="flex justify-between">
+              ADMIN_USERNAME:
+              <Badge variant={authStatus.hasUsername ? "default" : "destructive"}>
+                {authStatus.hasUsername ? "Set" : "Missing"}
+              </Badge>
+            </li>
+            <li className="flex justify-between">
+              ADMIN_PASSWORD:
+              <Badge variant={authStatus.hasPassword ? "default" : "destructive"}>
+                {authStatus.hasPassword ? "Set" : "Missing"}
+              </Badge>
+            </li>
+            <li className="flex justify-between">
+              SECRET_COOKIE_PASSWORD:
+              <Badge variant={authStatus.hasSecretKey ? "default" : "destructive"}>
+                {authStatus.hasSecretKey ? "Set" : "Missing"}
+              </Badge>
+            </li>
+            <li className="flex justify-between">
+              SECRET_COOKIE_PASSWORD Length:
+              <Badge variant={authStatus.secretKeyLength >= 32 ? "default" : "destructive"}>
+                {authStatus.secretKeyLength} characters
+                {authStatus.secretKeyLength < 32 && " (needs at least 32)"}
+              </Badge>
+            </li>
+          </ul>
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-muted-foreground">
+            {authConfigValid
+              ? "Authentication configuration is valid"
+              : "Please fix the issues above in your environment variables"}
+          </p>
+        </CardFooter>
+      </Card>
+      
+      {/* Supabase Connection Test Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Supabase Connection Test</CardTitle>
+          <CardDescription>
+            Test connectivity to your Supabase project
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+              <Button 
+                className="flex-1"
+                onClick={runTest}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Testing...' : 'Test Supabase Connection'}
+              </Button>
+              
+              <Button 
+                variant="outline"
+                className="flex-1"
+                onClick={testDirectUrl}
+                disabled={isLoading}
+              >
+                Test Direct URL
+              </Button>
+            </div>
+
+            {status && (
+              <Alert variant="default" className="bg-primary/10 border-primary/20">
+                <AlertDescription>{status}</AlertDescription>
+              </Alert>
+            )}
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <div className="mt-4 text-sm text-muted-foreground">
+            <p>Common issues:</p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Network connectivity problems</li>
+              <li>CORS restrictions</li>
+              <li>Incorrect Supabase URL or key</li>
+              <li>Firewall or security settings</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex space-x-4">
+        <Button asChild>
+          <a href="/admin">Go to Admin Login</a>
         </Button>
         
-        <Button 
-          variant="outline"
-          className="w-full"
-          onClick={testDirectUrl}
-          disabled={isLoading}
-        >
-          Test Direct URL (no env vars)
+        <Button variant="outline" asChild>
+          <a href="/">Back to Homepage</a>
         </Button>
-
-        {status && (
-          <Alert className="bg-blue-50 border-blue-200">
-            <AlertDescription className="text-blue-800">{status}</AlertDescription>
-          </Alert>
-        )}
-
-        {error && (
-          <Alert className="bg-red-50 border-red-200">
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-
-      <div className="text-sm text-gray-500">
-        <p>Common issues:</p>
-        <ul className="list-disc pl-5 space-y-1 mt-2">
-          <li>Network connectivity problems</li>
-          <li>CORS restrictions</li>
-          <li>Incorrect Supabase URL or key</li>
-          <li>Firewall or security settings</li>
-        </ul>
       </div>
     </div>
   )

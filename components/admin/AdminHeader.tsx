@@ -1,20 +1,31 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-import type { User } from '@supabase/supabase-js'
 
 interface AdminHeaderProps {
-  user: User
+  username: string
 }
 
-export default function AdminHeader({ user }: AdminHeaderProps) {
+export default function AdminHeader({ username }: AdminHeaderProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/admin')
-    router.refresh()
+    // Use our server action to sign out
+    const response = await fetch('/admin/signout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    
+    if (response.redirected) {
+      // If we're redirected, follow the redirect
+      window.location.href = response.url
+    } else {
+      // Otherwise just refresh the page
+      router.push('/admin')
+      router.refresh()
+    }
   }
 
   return (
@@ -27,7 +38,7 @@ export default function AdminHeader({ user }: AdminHeaderProps) {
         </div>
         <div className="ml-auto flex items-center space-x-4">
           <span className="text-sm text-muted-foreground">
-            Welcome, {user.email}
+            Welcome, {username}
           </span>
           <button
             onClick={handleSignOut}
