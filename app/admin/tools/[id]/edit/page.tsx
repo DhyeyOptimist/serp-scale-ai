@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import '../../../config' // Import the edge runtime configuration
+import './config' // Import runtime configuration
+import '../../../config' // Import the main config
 import ToolForm from '@/components/admin/ToolForm'
 import { createClient } from '@supabase/supabase-js'
 
@@ -30,33 +31,42 @@ export default function EditToolPage({ params }: EditToolPageProps) {
       }
       
       try {
-        // Use environment variables directly
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        // Use environment variables directly with fallback values for build
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nxlyskmnvdvrcnsumdej.supabase.co'
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54bHlza21udmR2cmNuc3VtZGVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzQ4NjgwMzcsImV4cCI6MTk5MDQ0NDAzN30.VhMcDyt-bMa4AqB2OlaPFKejFcgO1Zyae4k4Lj7lQdM'
         
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Missing Supabase credentials')
-        }
-        
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        
-        // Fetch the tool by ID
-        const { data, error: supabaseError } = await supabase
-          .from('tools')
-          .select('*')
-          .eq('id', toolId)
-          .single()
-        
-        if (supabaseError) throw supabaseError
-        
-        if (!data) {
-          router.push('/admin/dashboard')
+        let supabase
+        try {
+          supabase = createClient(supabaseUrl, supabaseKey)
+        } catch (initError) {
+          console.error('Error creating Supabase client:', initError)
+          setError('Failed to initialize database connection')
+          setIsLoading(false)
           return
         }
         
-        setTool(data)
+        // Fetch the tool by ID
+        try {
+          const { data, error: supabaseError } = await supabase
+            .from('tools')
+            .select('*')
+            .eq('id', toolId)
+            .single()
+          
+          if (supabaseError) throw supabaseError
+          
+          if (!data) {
+            router.push('/admin/dashboard')
+            return
+          }
+          
+          setTool(data)
+        } catch (queryError) {
+          console.error('Error querying tool:', queryError)
+          setError('Failed to load tool data')
+        }
       } catch (err) {
-        console.error('Error fetching tool:', err)
+        console.error('Error in fetch process:', err)
         setError('Failed to load tool. Please try again.')
       } finally {
         setIsLoading(false)
