@@ -4,10 +4,8 @@ import ToolCard from '@/components/ui/ToolCard';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 
-// Extend the Tool type to include the slug field
-interface ToolWithSlug extends Tool {
-  slug?: string;
-}
+// Type alias using Tool interface
+type ToolWithSlug = Tool;
 
 interface SearchPageProps {
   searchParams: {
@@ -124,6 +122,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       category: tool.category || '',
                       faqs: tool.faqs || undefined,
                       is_featured: tool.is_featured,
+                      slug: tool.slug,
                       createdAt: new Date(tool.created_at),
                       updatedAt: new Date(tool.created_at)
                     }} 

@@ -4,10 +4,8 @@ import ToolCard from '@/components/ui/ToolCard';
 import CategoryTag from '@/components/ui/CategoryTag';
 import Link from 'next/link';
 
-// Extend the Tool type to include the slug field
-interface ToolWithSlug extends Tool {
-  slug?: string;
-}
+// Type alias using Tool interface (no need to extend as slug is already in Tool)
+type ToolWithSlug = Tool;
 
 export default async function Home() {
   const supabase = createClient();

@@ -3,10 +3,8 @@ import ToolCard from '@/components/ui/ToolCard';
 import Link from 'next/link';
 import { Tool } from '@/models/Tool';
 
-// Extend the Tool type to include the slug field
-interface ToolWithSlug extends Tool {
-  slug?: string;
-}
+// Type alias using Tool interface (no need to extend as slug is already in Tool)
+type ToolWithSlug = Tool;
 
 interface CategoryPageParams {
   params: {
@@ -61,6 +59,7 @@ export default async function CategoryPage({ params }: CategoryPageParams) {
                     category: tool.category || '',
                     faqs: tool.faqs || undefined,
                     is_featured: tool.is_featured,
+                    slug: tool.slug,
                     createdAt: new Date(tool.created_at),
                     updatedAt: new Date(tool.created_at)
                   }} 

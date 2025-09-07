@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client for browser usage
 // Environment variables are injected by Next.js at build time
@@ -22,7 +22,7 @@ const url = supabaseUrl || '';
 const key = supabaseAnonKey || '';
 
 // Create the Supabase client with improved error handling
-const createSupabaseClient = () => {
+export const createClient = () => {
   try {
     return createBrowserClient(url, key, {
       auth: {
@@ -35,7 +35,7 @@ const createSupabaseClient = () => {
     console.error('Error creating Supabase browser client:', error);
     
     try {
-      return createClient(url, key, {
+      return createSupabaseJsClient(url, key, {
         auth: {
           autoRefreshToken: true,
           persistSession: true
@@ -48,4 +48,5 @@ const createSupabaseClient = () => {
   }
 };
 
-export const supabase = createSupabaseClient();
+// Create an instance of the client for direct use
+export const supabase = createClient();

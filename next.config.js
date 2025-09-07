@@ -17,8 +17,6 @@ const nextConfig = {
     ],
   },
   experimental: {
-    // Next.js 14 server actions configuration
-    serverActions: true,
     // Optimize for Edge runtime
     optimizePackageImports: [
       '@radix-ui/react-avatar',

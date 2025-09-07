@@ -13,10 +13,8 @@ import {
   AccordionTrigger 
 } from '@/components/ui/accordion';
 
-// Extend the Tool type to include the slug field
-interface ToolWithSlug extends Tool {
-  slug?: string;
-}
+// Type alias using Tool interface
+type ToolWithSlug = Tool;
 
 interface ToolPageParams {
   params: {

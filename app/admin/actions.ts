@@ -2,20 +2,19 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabaseClient'
 import './config' // Import the edge runtime configuration
 import type { FAQ, ToolInsert, ToolUpdate } from '@/models/Tool'
+import { cookies } from 'next/headers'
+import { getIronSession } from 'iron-session'
+import { AdminSession, defaultSession, sessionOptions, validateAuthConfig } from '@/lib/session'
 
 export async function signIn(formData: FormData) {
   try {
-    const supabase = createClient()
-
-    // Full debugging info about environment
-    console.log('Environment variables status:', {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL, 
-      keyFirstChars: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 10) + '...' : 'Not Set'
-    })
+    // Validate the auth configuration
+    if (!validateAuthConfig()) {
+      return { error: 'Authentication configuration is incomplete. Please check server logs.' }
+    }
 
     // Get form data
     const email = formData.get('email') as string
@@ -26,35 +25,24 @@ export async function signIn(formData: FormData) {
       return { error: 'Email and password are required' }
     }
 
-    console.log(`Attempting to sign in with email: ${email} (password length: ${password.length})`)
+    // Compare with environment variables
+    const validUsername = process.env.ADMIN_USERNAME
+    const validPassword = process.env.ADMIN_PASSWORD
 
-    // Attempt to sign in
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      // Log the full error for debugging
-      console.error('Login error details:', { 
-        message: error.message, 
-        code: error.code,
-        status: error.status,
-        name: error.name,
-        details: JSON.stringify(error)
-      })
-      
-      // Return more detailed error messages based on error code
-      if (error.message.includes('Email not confirmed')) {
-        return { error: 'Please verify your email address before logging in' }
-      } else if (error.message.includes('Invalid login credentials')) {
-        return { error: 'The email or password you entered is incorrect. Note: You need to create a user first at /admin/signup' }
-      } else {
-        return { error: `Authentication failed: ${error.message}` }
-      }
+    // Check if credentials match
+    if (email !== validUsername || password !== validPassword) {
+      console.log(`Failed login attempt with email: ${email}`)
+      return { error: 'Invalid username or password' }
     }
 
-    // Successful login
+    // Get the session from the cookies
+    const session = await getIronSession<AdminSession>(cookies(), sessionOptions)
+    
+    // Update the session
+    session.isLoggedIn = true
+    session.username = email
+    await session.save()
+    
     console.log('Login successful for:', email)
 
     // Revalidate the admin path and redirect to dashboard
@@ -63,6 +51,22 @@ export async function signIn(formData: FormData) {
   } catch (err) {
     console.error('Unexpected error during login:', err)
     return { error: 'An unexpected error occurred. Please try again later.' }
+  }
+}
+
+export async function signOut() {
+  try {
+    // Get the session from the cookies
+    const session = await getIronSession<AdminSession>(cookies(), sessionOptions)
+    
+    // Destroy the session
+    session.destroy()
+    
+    // Redirect to the homepage
+    redirect('/')
+  } catch (err) {
+    console.error('Unexpected error during logout:', err)
+    redirect('/')
   }
 }
 
@@ -75,11 +79,40 @@ export async function createTool(formData: FormData) {
     const short_description = formData.get('short_description') as string
     const full_description = formData.get('full_description') as string || null
     const website_url = formData.get('website_url') as string
-    const logo_url = formData.get('logo_url') as string || null
-    const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
     const pricing_model = formData.get('pricing_model') as string || null
     const category = formData.get('category') as string || null
     const is_featured = formData.has('is_featured')
+    const slug = formData.get('slug') as string || null
+    const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
+    
+    // Handle logo file upload if provided
+    let logo_url = null
+    const logoFile = formData.get('logo') as File
+    
+    if (logoFile && logoFile.size > 0) {
+      const fileExt = logoFile.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+      const filePath = `tool-logos/${fileName}`
+      
+      // Upload the file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('tool-logos')
+        .upload(filePath, logoFile)
+      
+      if (uploadError) {
+        console.error('Error uploading logo:', uploadError)
+        return { error: `Failed to upload logo: ${uploadError.message}` }
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('tool-logos')
+        .getPublicUrl(filePath)
+      
+      logo_url = publicUrlData.publicUrl
+    }
     
     // Parse FAQs JSON if provided
     let faqs: FAQ[] | null = null
@@ -97,8 +130,8 @@ export async function createTool(formData: FormData) {
     }
     
     // Validate required fields
-    if (!name || !short_description || !website_url) {
-      return { error: 'Name, short description, and website URL are required' }
+    if (!name || !short_description || !website_url || !slug) {
+      return { error: 'Name, short description, website URL, and slug are required' }
     }
     
     // Prepare the tool data
@@ -107,6 +140,7 @@ export async function createTool(formData: FormData) {
       short_description,
       website_url,
       is_featured,
+      slug,
     }
     
     // Add optional fields if they exist
@@ -147,6 +181,42 @@ export async function deleteTool(formData: FormData) {
     if (isNaN(id) || id <= 0) {
       return { error: 'Invalid tool ID' }
     }
+
+    // Get the tool to find its logo URL before deletion
+    const { data: tool, error: fetchError } = await supabase
+      .from('tools')
+      .select('logo_url')
+      .eq('id', id)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching tool for deletion:', fetchError);
+      return { error: fetchError.message };
+    }
+    
+    // Delete the logo from storage if it exists
+    if (tool?.logo_url) {
+      try {
+        // Extract the path from the URL
+        const url = new URL(tool.logo_url);
+        const pathSegments = url.pathname.split('/');
+        const filePath = pathSegments[pathSegments.length - 2] + '/' + pathSegments[pathSegments.length - 1];
+        
+        // Delete the file from storage
+        const { error: deleteStorageError } = await supabase
+          .storage
+          .from('tool-logos')
+          .remove([filePath]);
+          
+        if (deleteStorageError) {
+          console.error('Error deleting logo from storage:', deleteStorageError);
+          // Continue with deletion even if storage deletion fails
+        }
+      } catch (storageErr) {
+        console.error('Error processing logo URL for deletion:', storageErr);
+        // Continue with deletion even if URL processing fails
+      }
+    }
     
     // Delete the tool from the database
     const { error } = await supabase
@@ -168,12 +238,9 @@ export async function deleteTool(formData: FormData) {
   }
 }
 
-export async function updateTool(formData: FormData) {
+export async function updateTool(id: number, formData: FormData) {
   try {
     const supabase = createClient()
-    
-    // Get the tool ID from the form data
-    const id = parseInt(formData.get('id') as string, 10)
     
     if (isNaN(id) || id <= 0) {
       return { error: 'Invalid tool ID' }
@@ -184,11 +251,60 @@ export async function updateTool(formData: FormData) {
     const short_description = formData.get('short_description') as string
     const full_description = formData.get('full_description') as string || null
     const website_url = formData.get('website_url') as string
-    const logo_url = formData.get('logo_url') as string || null
-    const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
     const pricing_model = formData.get('pricing_model') as string || null
     const category = formData.get('category') as string || null
     const is_featured = formData.has('is_featured')
+    const slug = formData.get('slug') as string || null
+    const existing_logo_url = formData.get('existing_logo_url') as string || null
+    const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
+    
+    // Handle logo file upload if provided
+    let logo_url = existing_logo_url
+    const logoFile = formData.get('logo') as File
+    
+    if (logoFile && logoFile.size > 0) {
+      const fileExt = logoFile.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+      const filePath = `tool-logos/${fileName}`
+      
+      // Upload the file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('tool-logos')
+        .upload(filePath, logoFile)
+      
+      if (uploadError) {
+        console.error('Error uploading logo:', uploadError)
+        return { error: `Failed to upload logo: ${uploadError.message}` }
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('tool-logos')
+        .getPublicUrl(filePath)
+      
+      logo_url = publicUrlData.publicUrl
+      
+      // Delete the old logo if it exists and we're replacing it
+      if (existing_logo_url) {
+        try {
+          // Extract the path from the URL
+          const url = new URL(existing_logo_url);
+          const pathSegments = url.pathname.split('/');
+          const oldFilePath = pathSegments[pathSegments.length - 2] + '/' + pathSegments[pathSegments.length - 1];
+          
+          // Delete the old file from storage
+          await supabase
+            .storage
+            .from('tool-logos')
+            .remove([oldFilePath]);
+        } catch (storageErr) {
+          console.error('Error deleting old logo:', storageErr);
+          // Continue with update even if old logo deletion fails
+        }
+      }
+    }
     
     // Parse FAQs JSON if provided
     let faqs: FAQ[] | null = null
@@ -206,8 +322,8 @@ export async function updateTool(formData: FormData) {
     }
     
     // Validate required fields
-    if (!name || !short_description || !website_url) {
-      return { error: 'Name, short description, and website URL are required' }
+    if (!name || !short_description || !website_url || !slug) {
+      return { error: 'Name, short description, website URL, and slug are required' }
     }
     
     // Prepare the tool data
@@ -217,6 +333,7 @@ export async function updateTool(formData: FormData) {
       short_description,
       website_url,
       is_featured,
+      slug,
     }
     
     // Add optional fields if they exist

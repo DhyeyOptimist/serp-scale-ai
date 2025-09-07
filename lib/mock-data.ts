@@ -17,6 +17,7 @@ export const mockTools: ITool[] = [
       { q: 'What can ChatGPT help me with?', a: 'ChatGPT can assist with writing, coding, analysis, creative tasks, learning, and general conversation.' }
     ],
     is_featured: true,
+    slug: 'chatgpt',
     createdAt: new Date('2024-01-15'),
     updatedAt: new Date('2024-01-15')
   },
@@ -35,6 +36,7 @@ export const mockTools: ITool[] = [
       { q: 'What styles can Midjourney create?', a: 'Midjourney excels at artistic, creative, and stylized images across many different art styles.' }
     ],
     is_featured: true,
+    slug: 'midjourney',
     createdAt: new Date('2024-01-16'),
     updatedAt: new Date('2024-01-16')
   },
@@ -53,6 +55,7 @@ export const mockTools: ITool[] = [
       { q: 'Does Jasper support multiple languages?', a: 'Yes, Jasper supports content creation in over 25 languages.' }
     ],
     is_featured: true,
+    slug: 'jasper-ai',
     createdAt: new Date('2024-01-17'),
     updatedAt: new Date('2024-01-17')
   },
@@ -71,6 +74,7 @@ export const mockTools: ITool[] = [
       { q: 'Can I use Runway for commercial projects?', a: 'Yes, Runway offers commercial licenses for business and professional use.' }
     ],
     is_featured: false,
+    slug: 'runway-ml',
     createdAt: new Date('2024-01-18'),
     updatedAt: new Date('2024-01-18')
   }
@@ -90,7 +94,8 @@ export function convertToSupabaseTool(legacyTool: ITool): Tool {
     pricing_model: legacyTool.pricing_model,
     category: legacyTool.category,
     faqs: legacyTool.faqs || null,
-    is_featured: legacyTool.is_featured
+    is_featured: legacyTool.is_featured,
+    slug: legacyTool.slug || legacyTool.name.toLowerCase().replace(/\s+/g, '-')
   };
 }
 
@@ -108,6 +113,7 @@ export function convertToLegacyTool(supabaseTool: Tool): ITool {
     category: supabaseTool.category || '',
     faqs: supabaseTool.faqs || undefined,
     is_featured: supabaseTool.is_featured,
+    slug: supabaseTool.slug,
     createdAt: new Date(supabaseTool.created_at),
     updatedAt: new Date(supabaseTool.created_at) // Using created_at as fallback
   };
