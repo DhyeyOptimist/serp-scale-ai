@@ -80,7 +80,8 @@ export async function createTool(formData: FormData) {
     const full_description = formData.get('full_description') as string || null
     const website_url = formData.get('website_url') as string
     const pricing_model = formData.get('pricing_model') as string || null
-    const category = formData.get('category') as string || null
+    let category = formData.get('category') as string || null
+    const new_category_input = (formData.get('new_category') as string | null)?.trim() || null
     const is_featured = formData.has('is_featured')
     const slug = formData.get('slug') as string || null
     const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
@@ -114,6 +115,29 @@ export async function createTool(formData: FormData) {
       logo_url = publicUrlData.publicUrl
     }
     
+    // If a new category name is provided, create it if missing and use it
+    if (new_category_input) {
+      const newCategoryName = new_category_input
+      try {
+        const { data: existingCategory } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('name', newCategoryName)
+          .maybeSingle()
+        if (!existingCategory) {
+          const { error: insertCatError } = await supabase
+            .from('categories')
+            .insert({ name: newCategoryName })
+          if (insertCatError) {
+            console.error('Error creating new category:', insertCatError)
+          }
+        }
+        category = newCategoryName
+      } catch (catErr) {
+        console.error('Category creation check failed:', catErr)
+      }
+    }
+
     // Parse FAQs JSON if provided
     let faqs: FAQ[] | null = null
     const faqsString = formData.get('faqs') as string
@@ -252,7 +276,8 @@ export async function updateTool(id: number, formData: FormData) {
     const full_description = formData.get('full_description') as string || null
     const website_url = formData.get('website_url') as string
     const pricing_model = formData.get('pricing_model') as string || null
-    const category = formData.get('category') as string || null
+    let category = formData.get('category') as string || null
+    const new_category_input = (formData.get('new_category') as string | null)?.trim() || null
     const is_featured = formData.has('is_featured')
     const slug = formData.get('slug') as string || null
     const existing_logo_url = formData.get('existing_logo_url') as string || null
@@ -306,6 +331,29 @@ export async function updateTool(id: number, formData: FormData) {
       }
     }
     
+    // If a new category name is provided, create it if missing and use it
+    if (new_category_input) {
+      const newCategoryName = new_category_input
+      try {
+        const { data: existingCategory } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('name', newCategoryName)
+          .maybeSingle()
+        if (!existingCategory) {
+          const { error: insertCatError } = await supabase
+            .from('categories')
+            .insert({ name: newCategoryName })
+          if (insertCatError) {
+            console.error('Error creating new category:', insertCatError)
+          }
+        }
+        category = newCategoryName
+      } catch (catErr) {
+        console.error('Category creation check failed:', catErr)
+      }
+    }
+
     // Parse FAQs JSON if provided
     let faqs: FAQ[] | null = null
     const faqsString = formData.get('faqs') as string

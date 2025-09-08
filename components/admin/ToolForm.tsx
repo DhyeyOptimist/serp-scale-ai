@@ -119,6 +119,13 @@ export default async function ToolForm({ initialData }: ToolFormProps) {
             </option>
           ))}
         </select>
+        <div className="text-sm text-gray-500">Or create a new category below</div>
+        <Input 
+          id="new_category" 
+          name="new_category" 
+          placeholder="New category name" 
+          defaultValue=""
+        />
       </div>
       
       <div className="space-y-2">
