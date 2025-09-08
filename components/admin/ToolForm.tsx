@@ -70,6 +70,17 @@ export default async function ToolForm({ initialData }: ToolFormProps) {
           initialImageUrl={initialData?.logo_url || ''}
         />
         <input type="hidden" name="existing_logo_url" value={initialData?.logo_url || ''} />
+        <div className="space-y-2 mt-2">
+          <Label htmlFor="logo_url_input">Or provide a logo image URL</Label>
+          <Input 
+            id="logo_url_input"
+            name="logo_url_input"
+            type="url"
+            placeholder="https://example.com/logo.png"
+            defaultValue={initialData?.logo_url || ''}
+          />
+          <p className="text-sm text-gray-500">If both are provided, the link will be used.</p>
+        </div>
       </div>
       
       <div className="space-y-2">

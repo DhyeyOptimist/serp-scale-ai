@@ -88,11 +88,12 @@ export async function createTool(formData: FormData) {
     const slug = formData.get('slug') as string || null
     const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
     
-    // Handle logo file upload if provided
-    let logo_url = null
+    // Handle logo via URL (preferred if provided) or file upload
+    const providedLogoUrl = (formData.get('logo_url_input') as string | null)?.trim() || null
+    let logo_url = providedLogoUrl
     const logoFile = formData.get('logo') as File
     
-    if (logoFile && logoFile.size > 0) {
+    if (!logo_url && logoFile && logoFile.size > 0) {
       const fileExt = logoFile.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
       const filePath = `tool-logos/${fileName}`
@@ -308,11 +309,12 @@ export async function updateTool(id: number, formData: FormData) {
     const existing_logo_url = formData.get('existing_logo_url') as string || null
     const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
     
-    // Handle logo file upload if provided
-    let logo_url = existing_logo_url
+    // Handle logo via URL (preferred if provided) or file upload
+    const providedLogoUrl = (formData.get('logo_url_input') as string | null)?.trim() || null
+    let logo_url = providedLogoUrl || existing_logo_url
     const logoFile = formData.get('logo') as File
     
-    if (logoFile && logoFile.size > 0) {
+    if (!providedLogoUrl && logoFile && logoFile.size > 0) {
       const fileExt = logoFile.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
       const filePath = `tool-logos/${fileName}`
