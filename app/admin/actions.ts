@@ -1,15 +1,33 @@
 'use server'
 
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-// Use the server-side Supabase client for all CRUD server actions
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/serverAdmin'
-import './config' // Import the edge runtime configuration
+import './config'
 import type { FAQ, ToolInsert, ToolUpdate } from '@/models/Tool'
 import { cookies } from 'next/headers'
 import { getIronSession } from 'iron-session'
 import { AdminSession, defaultSession, sessionOptions, validateAuthConfig } from '@/lib/session'
+import { z } from 'zod'
+
+// Zod schema for tool validation
+export const ToolSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  short_description: z.string().min(1, 'Short description is required'),
+  full_description: z.string().optional().nullable(),
+  logo_url_input: z.string().url('Logo URL must be a valid URL').optional().or(z.literal('')).nullable(),
+  website_url: z.string().url('Website URL must be a valid URL').min(1, 'Website URL is required'),
+  rating: z.union([z.string(), z.number()]).optional().nullable().transform(val => val === '' || val == null ? null : Number(val)),
+  pricing_model: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  new_category: z.string().optional().nullable(),
+  slug: z.string().min(1, 'Slug is required'),
+  is_featured: z.any().optional(),
+  faqs: z.string().optional().nullable(),
+  logo: z.any().optional(),
+})
 
 export async function signIn(formData: FormData) {
   try {
@@ -73,144 +91,165 @@ export async function signOut() {
 }
 
 export async function createTool(formData: FormData) {
-  try {
-    const supabase = createClient()
-    
-    // Extract form data
-    const name = formData.get('name') as string
-    const short_description = formData.get('short_description') as string
-    const full_description = formData.get('full_description') as string || null
-    const website_url = formData.get('website_url') as string
-    const pricing_model = formData.get('pricing_model') as string || null
-    let category = formData.get('category') as string || null
-    const new_category_input = (formData.get('new_category') as string | null)?.trim() || null
-    const is_featured = formData.has('is_featured')
-    let slug = formData.get('slug') as string || null
-    const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
-    
-    // Handle logo via URL (preferred if provided) or file upload
-    const providedLogoUrl = (formData.get('logo_url_input') as string | null)?.trim() || null
-    let logo_url = providedLogoUrl
-    const logoFile = formData.get('logo') as File
-    
-    if (!logo_url && logoFile && logoFile.size > 0) {
-      const fileExt = logoFile.name.split('.').pop()
+  const supabase = createClient()
+  // Convert FormData to plain object for Zod
+  const formObj: Record<string, any> = {}
+  formData.forEach((value, key) => {
+    formObj[key] = value
+  })
+
+  // Zod validation
+  const result = ToolSchema.safeParse(formObj)
+  if (!result.success) {
+    return {
+      success: false,
+      message: 'Validation failed. Please check your inputs.',
+      issues: result.error.issues,
+    }
+  }
+  const values = result.data
+
+  let {
+    name,
+    short_description,
+    full_description,
+    logo_url_input,
+    website_url,
+    rating,
+    pricing_model,
+    category,
+    new_category,
+    slug,
+    is_featured,
+    faqs,
+    logo,
+  } = values
+
+  // Handle logo via URL (preferred if provided) or file upload
+  let logo_url = logo_url_input?.trim() || null
+  if (!logo_url && logo && typeof logo !== 'string' && logo.size > 0) {
+    try {
+      const fileExt = logo.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
       const filePath = `tool-logos/${fileName}`
-      
-      // Upload the file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from('tool-logos')
-        .upload(filePath, logoFile)
-      
+        .upload(filePath, logo)
       if (uploadError) {
-        console.error('Error uploading logo:', uploadError)
-        return { error: `Failed to upload logo: ${uploadError.message}` }
+        // Not fatal, just log
+        console.error('Error uploading logo (continuing without logo):', uploadError)
+      } else {
+        const { data: publicUrlData } = supabase
+          .storage
+          .from('tool-logos')
+          .getPublicUrl(filePath)
+        logo_url = publicUrlData.publicUrl
       }
-      
-      // Get the public URL for the uploaded file
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('tool-logos')
-        .getPublicUrl(filePath)
-      
-      logo_url = publicUrlData.publicUrl
+    } catch (e) {
+      console.error('Logo upload error:', e)
     }
-    
-    // If a new category name is provided, create it if missing and use it
-    if (new_category_input) {
-      const newCategoryName = new_category_input
-      try {
-        const { data: existingCategory } = await supabase
+  }
+
+  // If a new category name is provided, create it if missing and use it
+  if (new_category && new_category.trim()) {
+    const newCategoryName = new_category.trim()
+    try {
+      const { data: existingCategory } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('name', newCategoryName)
+        .maybeSingle()
+      if (!existingCategory) {
+        const { error: insertCatError } = await supabase
           .from('categories')
-          .select('id, name')
-          .eq('name', newCategoryName)
-          .maybeSingle()
-        if (!existingCategory) {
-          const { error: insertCatError } = await supabase
-            .from('categories')
-            .insert({ name: newCategoryName })
-          if (insertCatError) {
-            console.error('Error creating new category:', insertCatError)
+          .insert({ name: newCategoryName })
+        if (insertCatError) {
+          return {
+            success: false,
+            message: 'Database error: Could not create new category.'
           }
         }
-        category = newCategoryName
-      } catch (catErr) {
-        console.error('Category creation check failed:', catErr)
+      }
+      category = newCategoryName
+    } catch (catErr) {
+      return {
+        success: false,
+        message: 'Database error: Could not check/create category.'
       }
     }
+  }
 
-    // Parse FAQs JSON if provided
-    let faqs: FAQ[] | null = null
-    const faqsString = formData.get('faqs') as string
-    if (faqsString && faqsString.trim()) {
-      try {
-        faqs = JSON.parse(faqsString)
-        // Validate the structure
-        if (!Array.isArray(faqs) || !faqs.every(item => typeof item === 'object' && 'q' in item && 'a' in item)) {
-          return { error: 'FAQs must be an array of objects with "q" and "a" properties' }
+  // Parse FAQs JSON if provided
+  let faqsArr: FAQ[] | null = null
+  if (faqs && typeof faqs === 'string' && faqs.trim()) {
+    try {
+      faqsArr = JSON.parse(faqs)
+      if (!Array.isArray(faqsArr) || !faqsArr.every(item => typeof item === 'object' && 'q' in item && 'a' in item)) {
+        return {
+          success: false,
+          message: 'FAQs must be an array of objects with "q" and "a" properties',
         }
-      } catch (e) {
-        return { error: 'Invalid FAQs JSON format' }
+      }
+    } catch (e) {
+      return {
+        success: false,
+        message: 'Invalid FAQs JSON format',
       }
     }
-    
-    // Validate required fields
-    if (!name || !short_description || !website_url || !slug) {
-      return { error: 'Name, short description, website URL, and slug are required' }
-    }
-    
-    // Ensure slug is unique; if taken, append a short suffix
-    if (slug) {
-      try {
-        const { data: existing } = await supabase
-          .from('tools')
-          .select('id')
-          .eq('slug', slug)
-          .maybeSingle()
-        if (existing) {
-          const suffix = Math.random().toString(36).slice(2, 6)
-          slug = `${slug}-${suffix}`
-        }
-      } catch (slugErr) {
-        console.warn('Slug uniqueness check error (continuing):', slugErr)
-      }
-    }
+  }
 
-    // Prepare the tool data
-    const toolData: ToolInsert = {
-      name,
-      short_description,
-      website_url,
-      is_featured,
-      slug: slug!,
+  // Ensure slug is unique; if taken, append a short suffix
+  if (slug) {
+    try {
+      const { data: existing } = await supabase
+        .from('tools')
+        .select('id')
+        .eq('slug', slug)
+        .maybeSingle()
+      if (existing) {
+        const suffix = Math.random().toString(36).slice(2, 6)
+        slug = `${slug}-${suffix}`
+      }
+    } catch (slugErr) {
+      // Not fatal, just log
+      console.warn('Slug uniqueness check error (continuing):', slugErr)
     }
-    
-    // Add optional fields if they exist
-    if (full_description) toolData.full_description = full_description
-    if (logo_url) toolData.logo_url = logo_url
-    if (rating !== null) toolData.rating = rating
-    if (pricing_model) toolData.pricing_model = pricing_model
-    if (category) toolData.category = category
-    if (faqs) toolData.faqs = faqs
-    
-    // Insert the tool into the database
-    // Try normal client first (with RLS policies granting authenticated insert). If it fails, fall back to admin.
-    let insertResult
-    let error
-    {
-      const { data, error: insertError } = await supabase
+  }
+
+  // Prepare the tool data
+  const toolData: ToolInsert = {
+    name,
+    short_description,
+    website_url,
+    is_featured: !!is_featured,
+    slug: slug!,
+  }
+  if (full_description) toolData.full_description = full_description
+  if (logo_url) toolData.logo_url = logo_url
+  if (rating !== null && rating !== undefined && !isNaN(rating)) toolData.rating = rating
+  if (pricing_model) toolData.pricing_model = pricing_model
+  if (category) toolData.category = category
+  if (faqsArr) toolData.faqs = faqsArr
+
+  // Insert the tool into the database
+  let insertResult
+  let error
+  try {
+    const { data, error: insertError } = await supabase
       .from('tools')
       .insert(toolData)
       .select()
       .single()
-      insertResult = data
-      error = insertError as any
-    }
+    insertResult = data
+    error = insertError as any
+  } catch (dbErr) {
+    error = dbErr
+  }
 
-    if (error) {
-      console.warn('Standard insert failed, attempting admin client:', error?.message || error)
+  if (error) {
+    // Try admin client as fallback
+    try {
       const admin = createAdminClient()
       const { data: adminData, error: adminError } = await admin
         .from('tools')
@@ -219,27 +258,30 @@ export async function createTool(formData: FormData) {
         .single()
       insertResult = adminData
       error = adminError as any
+    } catch (adminErr) {
+      return {
+        success: false,
+        message: 'Database error: Could not save the tool.'
+      }
     }
-    
-    if (error) {
-      console.error('Error inserting tool:', error)
-      return { error: error.message }
+  }
+
+  if (error) {
+    return {
+      success: false,
+      message: 'Database error: Could not save the tool.'
     }
-    
-    // After creation, redirect to the tool's public page
-    const created = insertResult as any
-    const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
-    revalidatePath('/')
-    revalidatePath('/search')
-    // As a fallback, return a JSON success if redirect is blocked by fetch
-    try {
-      redirect(destination)
-    } catch {
-      return { success: true, destination }
-    }
-  } catch (err) {
-    console.error('Unexpected error creating tool:', err)
-    return { error: 'An unexpected error occurred' }
+  }
+
+  // After creation, redirect to the tool's public page
+  const created = insertResult as any
+  const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
+  revalidatePath('/')
+  revalidatePath('/search')
+  try {
+    redirect(destination)
+  } catch {
+    return { success: true, destination }
   }
 }
 
@@ -348,17 +390,16 @@ export async function updateTool(id: number, formData: FormData) {
         .upload(filePath, logoFile)
       
       if (uploadError) {
-        console.error('Error uploading logo:', uploadError)
-        return { error: `Failed to upload logo: ${uploadError.message}` }
+        console.error('Error uploading logo (continuing without updating logo):', uploadError)
+      } else {
+        // Get the public URL for the uploaded file
+        const { data: publicUrlData } = supabase
+          .storage
+          .from('tool-logos')
+          .getPublicUrl(filePath)
+        
+        logo_url = publicUrlData.publicUrl
       }
-      
-      // Get the public URL for the uploaded file
-      const { data: publicUrlData } = supabase
-        .storage
-        .from('tool-logos')
-        .getPublicUrl(filePath)
-      
-      logo_url = publicUrlData.publicUrl
       
       // Delete the old logo if it exists and we're replacing it
       if (existing_logo_url) {
