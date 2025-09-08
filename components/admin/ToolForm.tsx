@@ -1,4 +1,6 @@
 
+'use client'
+
 import { createTool, updateTool } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import SubmitButton from "./SubmitButton";
@@ -10,7 +12,6 @@ import { Category, Tool } from "@/models/Tool";
 import { createClient } from "@/lib/supabaseClient";
 import ImageUploader from "./ImageUploader";
 import React, { useState, useEffect } from "react";
-import { useFormState } from "react-dom/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
@@ -23,10 +24,8 @@ export default function ToolForm({ initialData }: ToolFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [catError, setCatError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialData?.category || "");
-  const [formState, formAction] = useFormState(
-    initialData ? updateTool.bind(null, initialData.id) : createTool,
-    { success: null, message: null, issues: null }
-  );
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<boolean>(false);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -41,10 +40,36 @@ export default function ToolForm({ initialData }: ToolFormProps) {
     })();
   }, []);
 
+  const handleSubmit = async (formData: FormData) => {
+    setFormError(null);
+    setFormSuccess(false);
+    
+    try {
+      const action = initialData ? updateTool.bind(null, initialData.id) : createTool;
+      const result = await action(formData);
+      
+      if (result && typeof result === 'object' && 'success' in result && result.success === false) {
+        const errorMsg = ('message' in result ? result.message : 'An error occurred') || 'An error occurred';
+        setFormError(errorMsg);
+      } else {
+        setFormSuccess(true);
+        // If there's a destination, redirect after a brief delay
+        if (result && typeof result === 'object' && 'destination' in result && result.destination) {
+          setTimeout(() => {
+            window.location.href = result.destination;
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setFormError('An unexpected error occurred. Please try again.');
+    }
+  };
+
   const submitButtonText = initialData ? 'Update Tool' : 'Create Tool';
 
   return (
-    <form action={formAction} className="space-y-8" encType="multipart/form-data" autoComplete="off">
+    <form action={handleSubmit} className="space-y-8" encType="multipart/form-data" autoComplete="off">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input
@@ -184,25 +209,26 @@ export default function ToolForm({ initialData }: ToolFormProps) {
       {/* FAQs section - we could add dynamic FAQs fields in a future enhancement */}
 
       {/* Error message area */}
-      {formState && formState.success === false && (
-        <div className="text-red-600 border border-red-300 bg-red-50 rounded p-2">
-          {formState.message}
-          {formState.issues && (
-            <ul className="mt-1 text-xs">
-              {formState.issues.map((issue: any, idx: number) => (
-                <li key={idx}>{issue.message}</li>
-              ))}
-            </ul>
-          )}
+      {formError && (
+        <div className="text-red-600 border border-red-300 bg-red-50 rounded p-3">
+          <strong>Error:</strong> {formError}
         </div>
       )}
+      
+      {/* Success message area */}
+      {formSuccess && (
+        <div className="text-green-600 border border-green-300 bg-green-50 rounded p-3">
+          <strong>Success!</strong> Tool created successfully. Redirecting...
+        </div>
+      )}
+      
       {catError && (
-        <div className="text-red-600 border border-red-300 bg-red-50 rounded p-2">
-          {catError}
+        <div className="text-red-600 border border-red-300 bg-red-50 rounded p-3">
+          <strong>Warning:</strong> {catError}
         </div>
       )}
 
-      <SubmitButton>
+      <SubmitButton loadingText={initialData ? "Updating..." : "Creating..."}>
         {submitButtonText}
       </SubmitButton>
     </form>

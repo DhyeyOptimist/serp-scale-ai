@@ -91,197 +91,216 @@ export async function signOut() {
 }
 
 export async function createTool(formData: FormData) {
-  const supabase = createClient()
-  // Convert FormData to plain object for Zod
-  const formObj: Record<string, any> = {}
-  formData.forEach((value, key) => {
-    formObj[key] = value
-  })
+  try {
+    const supabase = createClient()
+    
+    // Convert FormData to plain object for Zod
+    const formObj: Record<string, any> = {}
+    formData.forEach((value, key) => {
+      formObj[key] = value
+    })
 
-  // Zod validation
-  const result = ToolSchema.safeParse(formObj)
-  if (!result.success) {
-    return {
-      success: false,
-      message: 'Validation failed. Please check your inputs.',
-      issues: result.error.issues,
+    // Zod validation - first step inside try block
+    const result = ToolSchema.safeParse(formObj)
+    if (!result.success) {
+      console.error('Create Tool - Validation failed:', result.error.issues)
+      return {
+        success: false,
+        message: 'Validation failed. Please check your inputs.',
+        issues: result.error.issues,
+      }
     }
-  }
-  const values = result.data
+    const values = result.data
 
-  let {
-    name,
-    short_description,
-    full_description,
-    logo_url_input,
-    website_url,
-    rating,
-    pricing_model,
-    category,
-    new_category,
-    slug,
-    is_featured,
-    faqs,
-    logo,
-  } = values
+    let {
+      name,
+      short_description,
+      full_description,
+      logo_url_input,
+      website_url,
+      rating,
+      pricing_model,
+      category,
+      new_category,
+      slug,
+      is_featured,
+      faqs,
+      logo,
+    } = values
 
-  // Handle logo via URL (preferred if provided) or file upload
-  let logo_url = logo_url_input?.trim() || null
-  if (!logo_url && logo && typeof logo !== 'string' && logo.size > 0) {
-    try {
-      const fileExt = logo.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
-      const filePath = `tool-logos/${fileName}`
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from('tool-logos')
-        .upload(filePath, logo)
-      if (uploadError) {
-        // Not fatal, just log
-        console.error('Error uploading logo (continuing without logo):', uploadError)
-      } else {
-        const { data: publicUrlData } = supabase
+    // Handle logo via URL (preferred if provided) or file upload
+    let logo_url = logo_url_input?.trim() || null
+    if (!logo_url && logo && typeof logo !== 'string' && logo.size > 0) {
+      try {
+        const fileExt = logo.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+        const filePath = `tool-logos/${fileName}`
+        const { data: uploadData, error: uploadError } = await supabase
           .storage
           .from('tool-logos')
-          .getPublicUrl(filePath)
-        logo_url = publicUrlData.publicUrl
+          .upload(filePath, logo)
+        if (uploadError) {
+          console.error('Error uploading logo (continuing without logo):', uploadError)
+        } else {
+          const { data: publicUrlData } = supabase
+            .storage
+            .from('tool-logos')
+            .getPublicUrl(filePath)
+          logo_url = publicUrlData.publicUrl
+        }
+      } catch (logoErr) {
+        console.error('Logo upload error:', logoErr)
       }
-    } catch (e) {
-      console.error('Logo upload error:', e)
     }
-  }
 
-  // If a new category name is provided, create it if missing and use it
-  if (new_category && new_category.trim()) {
-    const newCategoryName = new_category.trim()
-    try {
-      const { data: existingCategory } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('name', newCategoryName)
-        .maybeSingle()
-      if (!existingCategory) {
-        const { error: insertCatError } = await supabase
+    // If a new category name is provided, create it if missing and use it
+    if (new_category && new_category.trim()) {
+      const newCategoryName = new_category.trim()
+      try {
+        const { data: existingCategory } = await supabase
           .from('categories')
-          .insert({ name: newCategoryName })
-        if (insertCatError) {
-          return {
-            success: false,
-            message: 'Database error: Could not create new category.'
+          .select('id, name')
+          .eq('name', newCategoryName)
+          .maybeSingle()
+        if (!existingCategory) {
+          const { error: insertCatError } = await supabase
+            .from('categories')
+            .insert({ name: newCategoryName })
+          if (insertCatError) {
+            console.error('Create Tool - Category creation failed:', insertCatError)
+            return {
+              success: false,
+              message: 'Database error: Could not create new category.'
+            }
           }
         }
-      }
-      category = newCategoryName
-    } catch (catErr) {
-      return {
-        success: false,
-        message: 'Database error: Could not check/create category.'
-      }
-    }
-  }
-
-  // Parse FAQs JSON if provided
-  let faqsArr: FAQ[] | null = null
-  if (faqs && typeof faqs === 'string' && faqs.trim()) {
-    try {
-      faqsArr = JSON.parse(faqs)
-      if (!Array.isArray(faqsArr) || !faqsArr.every(item => typeof item === 'object' && 'q' in item && 'a' in item)) {
+        category = newCategoryName
+      } catch (catErr) {
+        console.error('Create Tool - Category check/creation failed:', catErr)
         return {
           success: false,
-          message: 'FAQs must be an array of objects with "q" and "a" properties',
+          message: 'Database error: Could not check/create category.'
         }
       }
-    } catch (e) {
-      return {
-        success: false,
-        message: 'Invalid FAQs JSON format',
+    }
+
+    // Parse FAQs JSON if provided
+    let faqsArr: FAQ[] | null = null
+    if (faqs && typeof faqs === 'string' && faqs.trim()) {
+      try {
+        faqsArr = JSON.parse(faqs)
+        if (!Array.isArray(faqsArr) || !faqsArr.every(item => typeof item === 'object' && 'q' in item && 'a' in item)) {
+          console.error('Create Tool - Invalid FAQs structure:', faqsArr)
+          return {
+            success: false,
+            message: 'FAQs must be an array of objects with "q" and "a" properties',
+          }
+        }
+      } catch (faqParseErr) {
+        console.error('Create Tool - FAQs JSON parse failed:', faqParseErr)
+        return {
+          success: false,
+          message: 'Invalid FAQs JSON format',
+        }
       }
     }
-  }
 
-  // Ensure slug is unique; if taken, append a short suffix
-  if (slug) {
-    try {
-      const { data: existing } = await supabase
-        .from('tools')
-        .select('id')
-        .eq('slug', slug)
-        .maybeSingle()
-      if (existing) {
-        const suffix = Math.random().toString(36).slice(2, 6)
-        slug = `${slug}-${suffix}`
+    // Ensure slug is unique; if taken, append a short suffix
+    if (slug) {
+      try {
+        const { data: existing } = await supabase
+          .from('tools')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle()
+        if (existing) {
+          const suffix = Math.random().toString(36).slice(2, 6)
+          slug = `${slug}-${suffix}`
+        }
+      } catch (slugErr) {
+        console.warn('Slug uniqueness check error (continuing):', slugErr)
       }
-    } catch (slugErr) {
-      // Not fatal, just log
-      console.warn('Slug uniqueness check error (continuing):', slugErr)
     }
-  }
 
-  // Prepare the tool data
-  const toolData: ToolInsert = {
-    name,
-    short_description,
-    website_url,
-    is_featured: !!is_featured,
-    slug: slug!,
-  }
-  if (full_description) toolData.full_description = full_description
-  if (logo_url) toolData.logo_url = logo_url
-  if (rating !== null && rating !== undefined && !isNaN(rating)) toolData.rating = rating
-  if (pricing_model) toolData.pricing_model = pricing_model
-  if (category) toolData.category = category
-  if (faqsArr) toolData.faqs = faqsArr
+    // Prepare the tool data
+    const toolData: ToolInsert = {
+      name,
+      short_description,
+      website_url,
+      is_featured: !!is_featured,
+      slug: slug!,
+    }
+    if (full_description) toolData.full_description = full_description
+    if (logo_url) toolData.logo_url = logo_url
+    if (rating !== null && rating !== undefined && !isNaN(rating)) toolData.rating = rating
+    if (pricing_model) toolData.pricing_model = pricing_model
+    if (category) toolData.category = category
+    if (faqsArr) toolData.faqs = faqsArr
 
-  // Insert the tool into the database
-  let insertResult
-  let error
-  try {
-    const { data, error: insertError } = await supabase
-      .from('tools')
-      .insert(toolData)
-      .select()
-      .single()
-    insertResult = data
-    error = insertError as any
-  } catch (dbErr) {
-    error = dbErr
-  }
-
-  if (error) {
-    // Try admin client as fallback
+    // Insert the tool into the database
+    let insertResult
+    let error
     try {
-      const admin = createAdminClient()
-      const { data: adminData, error: adminError } = await admin
+      const { data, error: insertError } = await supabase
         .from('tools')
         .insert(toolData)
         .select()
         .single()
-      insertResult = adminData
-      error = adminError as any
-    } catch (adminErr) {
+      insertResult = data
+      error = insertError as any
+    } catch (dbErr) {
+      error = dbErr
+    }
+
+    if (error) {
+      // Try admin client as fallback
+      try {
+        console.warn('Standard insert failed, attempting admin client:', error?.message || error)
+        const admin = createAdminClient()
+        const { data: adminData, error: adminError } = await admin
+          .from('tools')
+          .insert(toolData)
+          .select()
+          .single()
+        insertResult = adminData
+        error = adminError as any
+      } catch (adminErr) {
+        console.error('Create Tool - Admin client insert failed:', adminErr)
+        return {
+          success: false,
+          message: 'Database error: Could not save the tool.'
+        }
+      }
+    }
+
+    if (error) {
+      console.error('Create Tool - Final insert failed:', error)
       return {
         success: false,
         message: 'Database error: Could not save the tool.'
       }
     }
-  }
 
-  if (error) {
+    // Success - revalidate and redirect
+    const created = insertResult as any
+    const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
+    revalidatePath('/')
+    revalidatePath('/search')
+    
+    console.log('Create Tool - Success! Created tool:', created?.name, 'redirecting to:', destination)
+    
+    try {
+      redirect(destination)
+    } catch {
+      return { success: true, destination }
+    }
+  } catch (error) {
+    // Comprehensive error logging and user-friendly response
+    console.error('Create Tool Failed:', error)
     return {
       success: false,
-      message: 'Database error: Could not save the tool.'
+      message: 'An unexpected error occurred. Please try again.'
     }
-  }
-
-  // After creation, redirect to the tool's public page
-  const created = insertResult as any
-  const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
-  revalidatePath('/')
-  revalidatePath('/search')
-  try {
-    redirect(destination)
-  } catch {
-    return { success: true, destination }
   }
 }
 
