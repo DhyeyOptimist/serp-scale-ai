@@ -85,7 +85,7 @@ export async function createTool(formData: FormData) {
     let category = formData.get('category') as string || null
     const new_category_input = (formData.get('new_category') as string | null)?.trim() || null
     const is_featured = formData.has('is_featured')
-    const slug = formData.get('slug') as string || null
+    let slug = formData.get('slug') as string || null
     const rating = formData.get('rating') ? parseFloat(formData.get('rating') as string) : null
     
     // Handle logo via URL (preferred if provided) or file upload
@@ -161,13 +161,30 @@ export async function createTool(formData: FormData) {
       return { error: 'Name, short description, website URL, and slug are required' }
     }
     
+    // Ensure slug is unique; if taken, append a short suffix
+    if (slug) {
+      try {
+        const { data: existing } = await supabase
+          .from('tools')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle()
+        if (existing) {
+          const suffix = Math.random().toString(36).slice(2, 6)
+          slug = `${slug}-${suffix}`
+        }
+      } catch (slugErr) {
+        console.warn('Slug uniqueness check error (continuing):', slugErr)
+      }
+    }
+
     // Prepare the tool data
     const toolData: ToolInsert = {
       name,
       short_description,
       website_url,
       is_featured,
-      slug,
+      slug: slug!,
     }
     
     // Add optional fields if they exist
@@ -214,7 +231,12 @@ export async function createTool(formData: FormData) {
     const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
     revalidatePath('/')
     revalidatePath('/search')
-    redirect(destination)
+    // As a fallback, return a JSON success if redirect is blocked by fetch
+    try {
+      redirect(destination)
+    } catch {
+      return { success: true, destination }
+    }
   } catch (err) {
     console.error('Unexpected error creating tool:', err)
     return { error: 'An unexpected error occurred' }
@@ -439,7 +461,11 @@ export async function updateTool(id: number, formData: FormData) {
     const destination = slug ? `/tool/${slug}` : `/tool/${id}`
     revalidatePath('/')
     revalidatePath('/search')
-    redirect(destination)
+    try {
+      redirect(destination)
+    } catch {
+      return { success: true, destination }
+    }
   } catch (err) {
     console.error('Unexpected error updating tool:', err)
     return { error: 'An unexpected error occurred' }
