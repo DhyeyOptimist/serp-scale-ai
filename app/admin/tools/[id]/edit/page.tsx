@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import './config' // Import runtime configuration
 import '../../../config' // Import the main config
 import ToolForm from '@/components/admin/ToolForm'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabaseClient'
 
 interface EditToolPageProps {
   params: {

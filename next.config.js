@@ -21,6 +21,7 @@ const nextConfig = {
       },
     ],
   },
+  skipTrailingSlashRedirect: true,
   experimental: {
     // Optimize package imports
     optimizePackageImports: [
@@ -29,8 +30,7 @@ const nextConfig = {
       'lucide-react',
       'recharts',
     ],
-    // Skip collecting data for static pages that access Supabase
-    skipTrailingSlashRedirect: true,
+    // External packages for server components
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
   

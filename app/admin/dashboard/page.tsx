@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabaseClient'
 import type { Tool } from '@/models/Tool'
 import Link from 'next/link'
 import DeleteButton from '@/components/admin/DeleteButton'
