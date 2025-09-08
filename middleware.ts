@@ -18,34 +18,27 @@ export async function middleware(request: NextRequest) {
       return response;
     }
     
-    // Only perform Supabase auth checks on routes that require it
-    if (request.nextUrl.pathname.startsWith('/admin') || 
-        request.nextUrl.pathname.startsWith('/auth')) {
-      
-      // Create a Supabase client for middleware (handles auth automatically)
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            getAll: () => request.cookies.getAll(),
-            setAll: (cookies) => {
-              cookies.forEach((cookie) => {
-                response.cookies.set(cookie.name, cookie.value, cookie.options)
-              })
-            },
-          },
-        }
-      )
+    // Skip middleware processing for login page and debug/api endpoints
+    // to prevent redirect loops and allow API handling
+    if (
+      request.nextUrl.pathname === '/admin/login' ||
+      request.nextUrl.pathname.startsWith('/admin/login/') ||
+      request.nextUrl.pathname === '/admin/debug-auth' ||
+      request.nextUrl.pathname.startsWith('/admin/api/')
+    ) {
+      return response;
+    }
+    
+    // Only perform auth checks on admin routes
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+      // Protect admin routes by checking the presence of iron-session cookie.
+      // We intentionally avoid decoding the session here (not supported in middleware).
+      const hasAdminSessionCookie = request.cookies.has('serp-scale-ai-admin-session')
 
-      // For admin routes, check authentication
-      if (request.nextUrl.pathname.startsWith('/admin')) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        // If there's no active session and not already on /admin/login
-        // Let the layout handle the redirect to login form
+      // If no session cookie, redirect to the login page
+      if (!hasAdminSessionCookie) {
+        const loginUrl = new URL('/admin/login', request.url)
+        return NextResponse.redirect(loginUrl)
       }
     }
   } catch (error) {
