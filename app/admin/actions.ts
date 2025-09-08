@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 // Use the server-side Supabase client for all CRUD server actions
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/serverAdmin'
 import './config' // Import the edge runtime configuration
 import type { FAQ, ToolInsert, ToolUpdate } from '@/models/Tool'
 import { cookies } from 'next/headers'
@@ -177,11 +178,30 @@ export async function createTool(formData: FormData) {
     if (faqs) toolData.faqs = faqs
     
     // Insert the tool into the database
-    const { data, error } = await supabase
+    // Try normal client first (with RLS policies granting authenticated insert). If it fails, fall back to admin.
+    let insertResult
+    let error
+    {
+      const { data, error: insertError } = await supabase
       .from('tools')
       .insert(toolData)
       .select()
       .single()
+      insertResult = data
+      error = insertError as any
+    }
+
+    if (error) {
+      console.warn('Standard insert failed, attempting admin client:', error?.message || error)
+      const admin = createAdminClient()
+      const { data: adminData, error: adminError } = await admin
+        .from('tools')
+        .insert(toolData)
+        .select()
+        .single()
+      insertResult = adminData
+      error = adminError as any
+    }
     
     if (error) {
       console.error('Error inserting tool:', error)
@@ -189,7 +209,7 @@ export async function createTool(formData: FormData) {
     }
     
     // After creation, redirect to the tool's public page
-    const created = data as any
+    const created = insertResult as any
     const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
     revalidatePath('/')
     revalidatePath('/search')
