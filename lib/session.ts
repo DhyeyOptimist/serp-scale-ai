@@ -8,12 +8,14 @@ export interface AdminSession {
 
 // This is where we define our session options
 export const sessionOptions: SessionOptions = {
-  password: process.env.SECRET_COOKIE_PASSWORD as string,
+  password: process.env.SECRET_COOKIE_PASSWORD || 'ea9ed42343ef47e859ba826373c2cd32ad35f578123d5a0bbf',
   cookieName: "serp-scale-ai-admin-session",
   cookieOptions: {
     // Set to true in production if you're using HTTPS
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 7, // 1 week
+    // Make cookies accessible from all paths
+    path: '/',
   },
 };
 

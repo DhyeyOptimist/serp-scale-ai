@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getIronSession } from 'iron-session'
 import { sessionOptions, AdminSession } from '@/lib/session'
-import { cookies } from 'next/headers'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,15 +19,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create a response object to save cookies
+    // Create a new response to store cookies
     const response = NextResponse.json({ success: true })
     
-    // Get the session using cookies() instead of req
-    const session = await getIronSession<AdminSession>(
-      cookies(),
-      sessionOptions
-    )
-
+    // Get session from request and response
+    const session = await getIronSession<AdminSession>(req, response, sessionOptions)
+    
     // Set session data
     session.isLoggedIn = true
     session.username = username
