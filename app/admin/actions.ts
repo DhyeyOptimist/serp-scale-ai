@@ -181,15 +181,19 @@ export async function createTool(formData: FormData) {
       .from('tools')
       .insert(toolData)
       .select()
+      .single()
     
     if (error) {
       console.error('Error inserting tool:', error)
       return { error: error.message }
     }
     
-    // Revalidate the dashboard path to update the tools list
-    revalidatePath('/admin/dashboard')
-    redirect('/admin/dashboard')
+    // After creation, redirect to the tool's public page
+    const created = data as any
+    const destination = created?.slug ? `/tool/${created.slug}` : `/tool/${created?.id}`
+    revalidatePath('/')
+    revalidatePath('/search')
+    redirect(destination)
   } catch (err) {
     console.error('Unexpected error creating tool:', err)
     return { error: 'An unexpected error occurred' }
@@ -409,8 +413,11 @@ export async function updateTool(id: number, formData: FormData) {
     revalidatePath('/admin/dashboard')
     revalidatePath(`/admin/tools/${id}/edit`)
     
-    // Redirect to the dashboard
-    redirect('/admin/dashboard')
+    // Redirect to the tool's public page
+    const destination = slug ? `/tool/${slug}` : `/tool/${id}`
+    revalidatePath('/')
+    revalidatePath('/search')
+    redirect(destination)
   } catch (err) {
     console.error('Unexpected error updating tool:', err)
     return { error: 'An unexpected error occurred' }
