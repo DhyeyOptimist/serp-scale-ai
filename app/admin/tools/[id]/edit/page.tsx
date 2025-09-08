@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import './config' // Import runtime configuration
 import '../../../config' // Import the main config
 import ToolForm from '@/components/admin/ToolForm'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 
 interface EditToolPageProps {
   params: {
@@ -31,19 +31,7 @@ export default function EditToolPage({ params }: EditToolPageProps) {
       }
       
       try {
-        // Use environment variables directly with fallback values for build
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nxlyskmnvdvrcnsumdej.supabase.co'
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54bHlza21udmR2cmNuc3VtZGVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzQ4NjgwMzcsImV4cCI6MTk5MDQ0NDAzN30.VhMcDyt-bMa4AqB2OlaPFKejFcgO1Zyae4k4Lj7lQdM'
-        
-        let supabase
-        try {
-          supabase = createClient(supabaseUrl, supabaseKey)
-        } catch (initError) {
-          console.error('Error creating Supabase client:', initError)
-          setError('Failed to initialize database connection')
-          setIsLoading(false)
-          return
-        }
+        const supabase = createClient()
         
         // Fetch the tool by ID
         try {

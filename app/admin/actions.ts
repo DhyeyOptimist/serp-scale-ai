@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabaseClient'
+// Use the server-side Supabase client for all CRUD server actions
+import { createClient } from '@/lib/supabase/server'
 import './config' // Import the edge runtime configuration
 import type { FAQ, ToolInsert, ToolUpdate } from '@/models/Tool'
 import { cookies } from 'next/headers'

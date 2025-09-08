@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
 import type { Tool } from '@/models/Tool'
 import Link from 'next/link'
 import DeleteButton from '@/components/admin/DeleteButton'
@@ -26,14 +26,7 @@ export default function AdminDashboard() {
     async function fetchTools() {
       try {
         setLoading(true)
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Missing Supabase environment variables')
-        }
-        
-        const supabase = createClient(supabaseUrl, supabaseKey)
+        const supabase = createClient()
         
         // Fetch tools from database ordered by created_at in descending order
         const { data, error: supabaseError } = await supabase

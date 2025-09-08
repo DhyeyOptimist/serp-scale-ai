@@ -1,8 +1,13 @@
 import Link from 'next/link'
 import '../../config' // Import the edge runtime configuration
 import ToolForm from '@/components/admin/ToolForm'
+import { cookies } from 'next/headers'
+import { getIronSession } from 'iron-session'
+import { sessionOptions, type AdminSession } from '@/lib/session'
 
 export default async function AddNewTool() {
+  // Ensure only authenticated admins can access this server component
+  const session = await getIronSession<AdminSession>(cookies(), sessionOptions)
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center border-b border-border pb-4">
