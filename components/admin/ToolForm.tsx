@@ -1,5 +1,6 @@
 import { createTool, updateTool } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
+import SubmitButton from "./SubmitButton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ export default async function ToolForm({ initialData }: ToolFormProps) {
   const submitButtonText = initialData ? 'Update Tool' : 'Create Tool';
   
   return (
-    <form action={action} className="space-y-8">
+    <form action={action} className="space-y-8" encType="multipart/form-data">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input 
@@ -152,9 +153,9 @@ export default async function ToolForm({ initialData }: ToolFormProps) {
       
       {/* FAQs section - we could add dynamic FAQs fields in a future enhancement */}
       
-      <Button type="submit" className="w-full">
+      <SubmitButton>
         {submitButtonText}
-      </Button>
+      </SubmitButton>
     </form>
   );
 }
