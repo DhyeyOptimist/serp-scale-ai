@@ -22,21 +22,29 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      console.log('Submitting login form:', { username, passwordLength: password.length })
+      
       const response = await fetch('/admin/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        // Important for cookie handling
+        credentials: 'same-origin'
       })
 
+      const data = await response.json()
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Login failed')
+        throw new Error(data.error || 'Login failed')
       }
 
-      // Login successful
-      router.push('/admin/dashboard')
-      router.refresh()
+      console.log('Login successful:', data)
+      
+      // Login successful - force a complete page refresh to ensure
+      // the session cookie is properly recognized
+      window.location.href = '/admin/dashboard'
     } catch (err) {
+      console.error('Login error:', err)
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
       setLoading(false)

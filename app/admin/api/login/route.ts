@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getIronSession } from 'iron-session'
-import { sessionOptions } from '@/lib/session'
+import { sessionOptions, AdminSession } from '@/lib/session'
+import { cookies } from 'next/headers'
 
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json()
+    
+    console.log('Login attempt:', { username, expectedUsername: process.env.ADMIN_USERNAME })
     
     // Validate credentials
     if (
@@ -17,17 +20,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const session = await getIronSession<{
-      isLoggedIn: boolean,
-      username: string
-    }>(req, NextResponse.next(), sessionOptions)
+    // Create a response object to save cookies
+    const response = NextResponse.json({ success: true })
+    
+    // Get the session using cookies() instead of req
+    const session = await getIronSession<AdminSession>(
+      cookies(),
+      sessionOptions
+    )
 
     // Set session data
     session.isLoggedIn = true
     session.username = username
     await session.save()
 
-    return NextResponse.json({ success: true })
+    console.log('Session saved successfully:', { isLoggedIn: session.isLoggedIn, username: session.username })
+
+    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
