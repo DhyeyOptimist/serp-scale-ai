@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import AbstractDataflow from '@/components/ui/AbstractDataflow';
 
 export default function HeroSection() {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -26,6 +27,9 @@ export default function HeroSection() {
 
   return (
     <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 to-white">
+      {/* Abstract Dataflow Background */}
+      <AbstractDataflow />
+      
       {/* Aurora Background */}
       <div className="absolute inset-0 -z-10">
         <div 
