@@ -76,10 +76,57 @@ const config: Config = {
             height: '0',
           },
         },
+        // Ethereal Aurora Animation Keyframes
+        'blobAnimate': {
+          '0%': {
+            transform: 'scale(1) translate(0px, 0px)',
+            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+          },
+          '50%': {
+            transform: 'scale(1.2) translate(100px, -50px)',
+            borderRadius: '40% 60% 70% 30% / 40% 70% 30% 60%',
+          },
+          '100%': {
+            transform: 'scale(1) translate(0px, 0px)',
+            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+          },
+        },
+        'blobAnimate2': {
+          '0%': {
+            transform: 'scale(1.1) translate(20px, 10px)',
+            borderRadius: '50% 60% 40% 70% / 70% 50% 60% 40%',
+          },
+          '50%': {
+            transform: 'scale(0.9) translate(-80px, 60px)',
+            borderRadius: '70% 30% 60% 40% / 30% 70% 40% 60%',
+          },
+          '100%': {
+            transform: 'scale(1.1) translate(20px, 10px)',
+            borderRadius: '50% 60% 40% 70% / 70% 50% 60% 40%',
+          },
+        },
+        'blobAnimate3': {
+          '0%': {
+            transform: 'scale(0.8) translate(-30px, -20px)',
+            borderRadius: '40% 70% 60% 30% / 50% 40% 70% 60%',
+          },
+          '50%': {
+            transform: 'scale(1.3) translate(60px, -100px)',
+            borderRadius: '70% 30% 40% 60% / 60% 70% 30% 40%',
+          },
+          '100%': {
+            transform: 'scale(0.8) translate(-30px, -20px)',
+            borderRadius: '40% 70% 60% 30% / 50% 40% 70% 60%',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        // Ethereal Aurora Animations
+        'aurora-blob': 'blobAnimate 15s ease-in-out infinite alternate',
+        'aurora-blob-2': 'blobAnimate2 18s ease-in-out infinite alternate-reverse',
+        'aurora-blob-3': 'blobAnimate3 22s ease-in-out infinite alternate',
       },
     },
   },

@@ -30,7 +30,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 -z-10">
         {/* Primary Aurora Blob */}
         <div 
-          className="absolute top-1/4 left-1/4 w-96 h-96 aurora-blob"
+          className="absolute top-1/4 left-1/4 w-96 h-96 animate-aurora-blob"
           style={{
             background: 'radial-gradient(circle, rgba(105, 82, 235, 0.4) 0%, rgba(179, 255, 59, 0.3) 70%)',
             filter: 'blur(100px)',
@@ -39,7 +39,7 @@ export default function HeroSection() {
         
         {/* Secondary Aurora Blob */}
         <div 
-          className="absolute top-1/3 right-1/4 w-80 h-80 aurora-blob-2"
+          className="absolute top-1/3 right-1/4 w-80 h-80 animate-aurora-blob-2"
           style={{
             background: 'radial-gradient(circle, rgba(179, 255, 59, 0.4) 0%, rgba(105, 82, 235, 0.3) 70%)',
             filter: 'blur(120px)',
@@ -48,7 +48,7 @@ export default function HeroSection() {
         
         {/* Tertiary Aurora Blob */}
         <div 
-          className="absolute bottom-1/4 left-1/3 w-72 h-72 aurora-blob-3"
+          className="absolute bottom-1/4 left-1/3 w-72 h-72 animate-aurora-blob-3"
           style={{
             background: 'radial-gradient(circle, rgba(105, 82, 235, 0.3) 20%, rgba(179, 255, 59, 0.4) 80%)',
             filter: 'blur(90px)',
