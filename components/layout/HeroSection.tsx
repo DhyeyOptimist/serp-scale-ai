@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import AbstractDataflow from '@/components/ui/AbstractDataflow';
 
 export default function HeroSection() {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -26,36 +25,33 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-      {/* Abstract Dataflow Background */}
-      <AbstractDataflow />
-      
-      {/* Aurora Background */}
+    <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 to-white">      
+      {/* Dynamic Aurora Background */}
       <div className="absolute inset-0 -z-10">
+        {/* Primary Aurora Blob */}
         <div 
-          className="absolute top-1/4 left-1/4 w-96 h-96 blob-animate"
+          className="absolute top-1/4 left-1/4 w-96 h-96 aurora-blob"
           style={{
-            background: 'radial-gradient(circle, #6952EB 0%, #B3FF3B 70%)',
+            background: 'radial-gradient(circle, rgba(105, 82, 235, 0.4) 0%, rgba(179, 255, 59, 0.3) 70%)',
             filter: 'blur(100px)',
-            opacity: 0.3,
           }}
         />
+        
+        {/* Secondary Aurora Blob */}
         <div 
-          className="absolute top-1/3 right-1/4 w-80 h-80 blob-animate"
+          className="absolute top-1/3 right-1/4 w-80 h-80 aurora-blob-2"
           style={{
-            background: 'radial-gradient(circle, #B3FF3B 0%, #6952EB 70%)',
+            background: 'radial-gradient(circle, rgba(179, 255, 59, 0.4) 0%, rgba(105, 82, 235, 0.3) 70%)',
             filter: 'blur(120px)',
-            opacity: 0.2,
-            animationDelay: '-10s',
           }}
         />
+        
+        {/* Tertiary Aurora Blob */}
         <div 
-          className="absolute bottom-1/4 left-1/3 w-72 h-72 blob-animate"
+          className="absolute bottom-1/4 left-1/3 w-72 h-72 aurora-blob-3"
           style={{
-            background: 'radial-gradient(circle, #6952EB 20%, #B3FF3B 80%)',
+            background: 'radial-gradient(circle, rgba(105, 82, 235, 0.3) 20%, rgba(179, 255, 59, 0.4) 80%)',
             filter: 'blur(90px)',
-            opacity: 0.25,
-            animationDelay: '-5s',
           }}
         />
       </div>

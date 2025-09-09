@@ -53,22 +53,51 @@
   }
 }
 
-/* Aurora Blob Animation */
+/* Aurora Blob Animation - Robust Dynamic Background Effect */
 @keyframes blobAnimate {
   0% {
-    transform: translate(0, 0) rotate(0deg);
-    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: scale(1) translate(0px, 0px);
   }
   50% {
-    transform: translate(30px, -50px) rotate(180deg);
-    border-radius: 40% 60% 70% 30% / 40% 70% 30% 60%;
+    transform: scale(1.2) translate(100px, -50px);
   }
   100% {
-    transform: translate(0, 0) rotate(360deg);
-    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: scale(1) translate(0px, 0px);
   }
 }
 
-.blob-animate {
-  animation: blobAnimate 20s ease-in-out infinite alternate;
+@keyframes blobAnimate2 {
+  0% {
+    transform: scale(1.1) translate(20px, 10px);
+  }
+  50% {
+    transform: scale(0.9) translate(-80px, 60px);
+  }
+  100% {
+    transform: scale(1.1) translate(20px, 10px);
+  }
+}
+
+@keyframes blobAnimate3 {
+  0% {
+    transform: scale(0.8) translate(-30px, -20px);
+  }
+  50% {
+    transform: scale(1.3) translate(60px, -100px);
+  }
+  100% {
+    transform: scale(0.8) translate(-30px, -20px);
+  }
+}
+
+.aurora-blob {
+  animation: blobAnimate 15s ease-in-out infinite alternate;
+}
+
+.aurora-blob-2 {
+  animation: blobAnimate2 18s ease-in-out infinite alternate-reverse;
+}
+
+.aurora-blob-3 {
+  animation: blobAnimate3 22s ease-in-out infinite alternate;
 }
