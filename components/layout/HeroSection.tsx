@@ -26,14 +26,16 @@ export default function HeroSection() {
 
   return (
     <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 to-white">      
-      {/* Dynamic Aurora Background */}
-      <div className="absolute inset-0 -z-10">
+      {/* Dynamic Aurora Background - Enhanced Visibility */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
         {/* Primary Aurora Blob */}
         <div 
           className="absolute top-1/4 left-1/4 w-96 h-96 animate-aurora-blob"
           style={{
-            background: 'radial-gradient(circle, rgba(105, 82, 235, 0.4) 0%, rgba(179, 255, 59, 0.3) 70%)',
-            filter: 'blur(100px)',
+            background: 'radial-gradient(circle, rgba(105, 82, 235, 0.8) 0%, rgba(179, 255, 59, 0.6) 50%, transparent 70%)',
+            filter: 'blur(80px)',
+            mixBlendMode: 'multiply',
+            animation: 'blobAnimate 15s ease-in-out infinite alternate',
           }}
         />
         
@@ -41,8 +43,10 @@ export default function HeroSection() {
         <div 
           className="absolute top-1/3 right-1/4 w-80 h-80 animate-aurora-blob-2"
           style={{
-            background: 'radial-gradient(circle, rgba(179, 255, 59, 0.4) 0%, rgba(105, 82, 235, 0.3) 70%)',
-            filter: 'blur(120px)',
+            background: 'radial-gradient(circle, rgba(179, 255, 59, 0.8) 0%, rgba(105, 82, 235, 0.6) 50%, transparent 70%)',
+            filter: 'blur(100px)',
+            mixBlendMode: 'multiply',
+            animation: 'blobAnimate2 18s ease-in-out infinite alternate-reverse',
           }}
         />
         
@@ -50,14 +54,36 @@ export default function HeroSection() {
         <div 
           className="absolute bottom-1/4 left-1/3 w-72 h-72 animate-aurora-blob-3"
           style={{
-            background: 'radial-gradient(circle, rgba(105, 82, 235, 0.3) 20%, rgba(179, 255, 59, 0.4) 80%)',
-            filter: 'blur(90px)',
+            background: 'radial-gradient(circle, rgba(105, 82, 235, 0.7) 20%, rgba(179, 255, 59, 0.8) 60%, transparent 80%)',
+            filter: 'blur(70px)',
+            mixBlendMode: 'multiply',
+            animation: 'blobAnimate3 22s ease-in-out infinite alternate',
+          }}
+        />
+        
+        {/* Additional subtle overlay for better visibility */}
+        <div 
+          className="absolute top-1/2 left-1/2 w-64 h-64 animate-aurora-blob"
+          style={{
+            background: 'radial-gradient(circle, rgba(74, 144, 226, 0.5) 0%, transparent 60%)',
+            filter: 'blur(60px)',
+            transform: 'translate(-50%, -50%)',
+            animationDelay: '5s',
+            animation: 'blobAnimate 20s ease-in-out infinite alternate',
+          }}
+        />
+        
+        {/* Debug: Visible test element to confirm animation is working */}
+        <div 
+          className="absolute top-4 left-4 w-16 h-16 bg-purple-500 rounded-full animate-aurora-blob opacity-70"
+          style={{
+            animation: 'blobAnimate 5s ease-in-out infinite alternate',
           }}
         />
       </div>
 
       {/* Foreground Content */}
-      <div ref={contentRef} className="relative z-10 max-w-6xl mx-auto px-6 py-16 text-center space-y-6">
+      <div ref={contentRef} className="relative max-w-6xl mx-auto px-6 py-16 text-center space-y-6" style={{ zIndex: 10 }}>
         {/* Main Headline */}
         <h1 className="animate-in text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
           <span style={{ color: '#141414' }}>Your Guide to </span>
