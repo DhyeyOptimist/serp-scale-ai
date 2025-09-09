@@ -25,7 +25,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 to-white">
+    <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-50 to-white">
       {/* Aurora Background */}
       <div className="absolute inset-0 -z-10">
         <div 
@@ -57,9 +57,9 @@ export default function HeroSection() {
       </div>
 
       {/* Foreground Content */}
-      <div ref={contentRef} className="relative z-10 max-w-6xl mx-auto px-6 text-center space-y-8">
+      <div ref={contentRef} className="relative z-10 max-w-6xl mx-auto px-6 py-16 text-center space-y-6">
         {/* Main Headline */}
-        <h1 className="animate-in text-5xl md:text-7xl lg:text-8xl font-bold leading-tight">
+        <h1 className="animate-in text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
           <span style={{ color: '#141414' }}>Your Guide to </span>
           <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-800 bg-clip-text text-transparent">
             Intelligent Tools
@@ -68,14 +68,14 @@ export default function HeroSection() {
         </h1>
 
         {/* Sub-headline */}
-        <p className="animate-in text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+        <p className="animate-in text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
           Discover, compare, and implement the best AI solutions for any task. 
           <br className="hidden md:block" />
           Streamline your workflow with curated, intelligent tools.
         </p>
 
         {/* Search Bar */}
-        <div className="animate-in max-w-3xl mx-auto">
+        <div className="animate-in max-w-3xl mx-auto pt-2">
           <form action="/search" method="GET">
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 flex items-center pl-6 pointer-events-none z-10">
@@ -99,44 +99,13 @@ export default function HeroSection() {
                 type="text"
                 name="q"
                 placeholder="Search for AI tools, categories, or use cases..."
-                className="w-full h-20 pl-16 pr-8 py-6 text-lg bg-white/95 backdrop-blur-md border-2 border-gray-200/80 rounded-3xl shadow-2xl focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-500/60 transition-all duration-300 hover:shadow-3xl hover:bg-white hover:border-gray-300/80 placeholder:text-gray-400"
+                className="w-full h-16 pl-16 pr-8 py-4 text-lg bg-white/95 backdrop-blur-md border-2 border-gray-200/80 rounded-3xl shadow-2xl focus:outline-none focus:ring-4 focus:ring-purple-500/30 focus:border-purple-500/60 transition-all duration-300 hover:shadow-3xl hover:bg-white hover:border-gray-300/80 placeholder:text-gray-400"
                 aria-label="Search for AI tools"
                 autoComplete="off"
               />
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
             </div>
           </form>
-        </div>
-
-        {/* Call-to-action buttons */}
-        <div className="animate-in flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
-          <a
-            href="/tools"
-            className="group px-10 py-5 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-2xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 hover:from-purple-700 hover:to-blue-700"
-          >
-            <span className="flex items-center gap-2">
-              Explore All Tools
-              <svg 
-                className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </span>
-          </a>
-          <a
-            href="/submit-tool"
-            className="group px-10 py-5 border-2 border-purple-600/80 text-purple-600 font-semibold rounded-2xl hover:bg-purple-50 hover:border-purple-700 transition-all duration-300 backdrop-blur-sm bg-white/50"
-          >
-            <span className="flex items-center gap-2">
-              Submit Your Tool
-              <span className="px-2 py-1 text-xs font-bold rounded-md bg-lime-400 text-gray-800">
-                NEW
-              </span>
-            </span>
-          </a>
         </div>
       </div>
     </section>
