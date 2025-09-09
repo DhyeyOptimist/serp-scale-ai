@@ -52,3 +52,23 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 }
+
+/* Aurora Blob Animation */
+@keyframes blobAnimate {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+  50% {
+    transform: translate(30px, -50px) rotate(180deg);
+    border-radius: 40% 60% 70% 30% / 40% 70% 30% 60%;
+  }
+  100% {
+    transform: translate(0, 0) rotate(360deg);
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+  }
+}
+
+.blob-animate {
+  animation: blobAnimate 20s ease-in-out infinite alternate;
+}
