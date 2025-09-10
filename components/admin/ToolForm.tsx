@@ -1,19 +1,21 @@
 
 'use client'
 
-import { createTool, updateTool } from "@/app/admin/actions";
-import { Button } from "@/components/ui/button";
-import SubmitButton from "./SubmitButton";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Category, Tool } from "@/models/Tool";
-import { createClient } from "@/lib/supabaseClient";
-import ImageUploader from "./ImageUploader";
-import React, { useState, useEffect } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+'use client'
 
+import { createTool, updateTool } from "@/app/admin/actions"
+import { Button } from "@/components/ui/button"
+import SubmitButton from "./SubmitButton"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Category, Tool } from "@/models/Tool"
+import { createClient } from "@/lib/supabaseClient"
+import ImageUploader from "./ImageUploader"
+import React, { useState, useEffect } from "react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface ToolFormProps {
   initialData?: Tool;
@@ -207,6 +209,17 @@ export default function ToolForm({ initialData }: ToolFormProps) {
       </div>
 
       {/* FAQs section - we could add dynamic FAQs fields in a future enhancement */}
+        <Textarea
+          id="faqs"
+          name="faqs"
+          rows={4}
+          placeholder='[{"q": "Question 1?", "a": "Answer 1"}, {"q": "Question 2?", "a": "Answer 2"}]'
+          defaultValue={initialData?.faqs ? JSON.stringify(initialData.faqs, null, 2) : ''}
+        />
+        <p className="text-sm text-gray-500">
+          Enter FAQs as JSON array with "q" (question) and "a" (answer) properties
+        </p>
+      </div>
 
       {/* Error message area */}
       {formError && (
@@ -228,7 +241,10 @@ export default function ToolForm({ initialData }: ToolFormProps) {
         </div>
       )}
 
-      <SubmitButton loadingText={initialData ? "Updating..." : "Creating..."}>
+      <SubmitButton 
+        loadingText={initialData ? "Updating..." : "Creating..."}
+        disabled={isSubmitting}
+      >
         {submitButtonText}
       </SubmitButton>
     </form>

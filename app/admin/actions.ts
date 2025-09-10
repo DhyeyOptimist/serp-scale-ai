@@ -17,7 +17,10 @@ export const ToolSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   short_description: z.string().min(1, 'Short description is required'),
   full_description: z.string().optional().nullable(),
-  logo_url_input: z.string().url('Logo URL must be a valid URL').optional().or(z.literal('')).nullable(),
+  logo_url_input: z.string().optional().nullable().refine(
+    (val) => !val || val === '' || z.string().url().safeParse(val).success,
+    'Logo URL must be a valid URL'
+  ),
   website_url: z.string().url('Website URL must be a valid URL').min(1, 'Website URL is required'),
   rating: z.union([z.string(), z.number()]).optional().nullable().transform(val => val === '' || val == null ? null : Number(val)),
   pricing_model: z.string().optional().nullable(),
