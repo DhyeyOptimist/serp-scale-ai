@@ -166,7 +166,7 @@ export default function ToolForm({ initialData }: ToolFormProps) {
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Select a category</SelectItem>
+            {/* Removed invalid empty value item. Placeholder is handled by SelectValue. */}
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.name}>
                 {category.name}
